@@ -1,0 +1,12 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+
+# Screenshots saved by ScreenshotOnMissPlugin, recorded paths, user templates
+misses/
+*.paths.json
+templates/*

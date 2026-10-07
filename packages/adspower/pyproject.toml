@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mrfactory-adspower"
+version = "0.3.0"
+description = "Open AdsPower; look up groups, tags, profiles, and proxies; open, create, and re-proxy profiles."
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+adspower = "mrfactory.adspower.cli:main"
+
+# `mrfactory` is a namespace package shared by every package in the
+# workspace. See docs/CONVENTIONS.md at the workspace root.
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["mrfactory.adspower*"]
+namespaces = true

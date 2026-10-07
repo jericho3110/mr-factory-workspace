@@ -1,0 +1,245 @@
+import contextlib
+import io
+import json
+import tempfile
+import unittest
+from pathlib import Path
+from unittest import mock
+
+from mrfactory.adspower import cli
+from tests.fakes import FakeApi
+
+
+def run(*argv, api=None, interactive=False, answers=()):
+    """Run the CLI with a fake API; return (exit code, stdout, stderr).
+    `answers` are fed to input() when the CLI asks a question."""
+    out, err = io.StringIO(), io.StringIO()
+    answers = list(answers)
+    with mock.patch("mrfactory.adspower.cli.app.LocalApi", return_value=api or FakeApi()), \
+            mock.patch("mrfactory.adspower.cli.prompts.is_interactive", return_value=interactive), \
+            mock.patch("builtins.input", side_effect=lambda prompt: answers.pop(0)), \
+            contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+        code = cli.main(list(argv))
+    return code, out.getvalue(), err.getvalue()
+
+
+class TestHelp(unittest.TestCase):
+    def test_no_command_prints_help_with_every_command(self):
+        code, out, _ = run()
+        self.assertEqual(code, 0)
+        for command in ("open", "status", "groups", "tags", "profiles", "search", "open-profile",
+                        "close-profile", "proxies", "create", "examples:"):
+            self.assertIn(command, out)
+
+    def test_version_flag(self):
+        with self.assertRaises(SystemExit) as caught, contextlib.redirect_stdout(io.StringIO()) as out:
+            cli.main(["--version"])
+        self.assertEqual(caught.exception.code, 0)
+        self.assertRegex(out.getvalue(), r"^adspower \S+$")  # "adspower 0.3.0", or "0+unknown" uninstalled
+
+    def test_help_flag_on_a_command(self):
+        with self.assertRaises(SystemExit) as caught, contextlib.redirect_stdout(io.StringIO()) as out:
+            cli.main(["create", "--help"])
+        self.assertEqual(caught.exception.code, 0)
+        self.assertIn("--proxy", out.getvalue())
+
+
+class TestListing(unittest.TestCase):
+    def test_groups_filtered_by_name(self):
+        code, out, _ = run("groups", "-n", "jer")
+        self.assertEqual(code, 0)
+        self.assertIn("Jericho", out)
+        self.assertNotIn("Shopify", out)
+        self.assertIn("1 group\n", out)
+
+    def test_tags(self):
+        code, out, _ = run("tags")
+        self.assertIn("Sales", out)
+        self.assertIn("2 tags", out)
+
+    def test_profiles_in_a_group_with_line_breaks_cleaned(self):
+        code, out, _ = run("profiles", "-g", "socials")
+        self.assertEqual(code, 0)
+        self.assertIn("Insta main", out)  # "Insta\nmain" kept on one row
+        self.assertNotIn("John Shop", out)
+
+    def test_profiles_by_tag(self):
+        code, out, _ = run("profiles", "-t", "JERICHO")
+        self.assertIn("John Shop", out)
+        self.assertIn("1 profile\n", out)
+
+    def test_search_as_json(self):
+        code, out, _ = run("search", "john", "--json")
+        rows = json.loads(out)
+        self.assertEqual({row["id"] for row in rows}, {"k1a", "k2a"})
+        self.assertEqual(rows[0]["tags"], ["Sales"])
+
+    def test_proxies_by_tag_hide_passwords(self):
+        code, out, _ = run("proxies", "-t", "jericho", "--unused", "--json")
+        rows = json.loads(out)
+        self.assertEqual([row["id"] for row in rows], ["p2"])
+        self.assertNotIn("secret", out)
+
+
+class TestOpenProfile(unittest.TestCase):
+    def test_opens_a_single_match(self):
+        api = FakeApi()
+        code, out, _ = run("open-profile", "jane", api=api)
+        self.assertEqual(code, 0)
+        self.assertIn('Opened #2 "Jane Shop"', out)
+        self.assertIn("stays open", out)
+        self.assertEqual(api.open_browsers, {"k1b"})
+
+    def test_several_matches_ask_which_one(self):
+        api = FakeApi()
+        code, out, _ = run("open-profile", "shop", api=api, interactive=True, answers=["9", "2"])
+        self.assertEqual(code, 0)
+        self.assertIn("Please enter a number", out)   # "9" is out of range, asked again
+        self.assertEqual(api.open_browsers, {"k1a"})  # 2nd in serial order: #2 Jane, #10 John
+
+    def test_enter_cancels_the_choice(self):
+        api = FakeApi()
+        code, out, _ = run("open-profile", "shop", api=api, interactive=True, answers=[""])
+        self.assertEqual(code, 1)
+        self.assertEqual(api.open_browsers, set())
+
+    def test_several_matches_without_a_terminal_list_them_and_fail(self):
+        api = FakeApi()
+        code, out, err = run("open-profile", "shop", api=api, interactive=False)
+        self.assertEqual(code, 1)
+        self.assertIn("Jane Shop", out)
+        self.assertIn("be more specific", err)
+        self.assertEqual(api.open_browsers, set())
+
+    def test_close_profile(self):
+        api = FakeApi()
+        api.open_browsers.add("k1b")
+        code, out, _ = run("close-profile", "2", api=api)
+        self.assertEqual(code, 0)
+        self.assertEqual(api.open_browsers, set())
+
+
+class TestSetProxy(unittest.TestCase):
+    def test_auto_with_yes_uses_the_profiles_tag(self):
+        api = FakeApi()
+        code, out, _ = run("set-proxy", "10", "--proxy", "auto", "--yes", api=api)
+        self.assertEqual(code, 0)
+        self.assertIn("http://1.1.1.1:8000  ->  socks5://2.2.2.2:9000", out)  # shown before changing
+        self.assertEqual(api.updates, [{"profile_id": "k1a", "proxyid": "p2"}])  # p2: unused, tagged Jericho
+
+    def test_asks_first_in_a_terminal(self):
+        api = FakeApi()
+        code, out, _ = run("set-proxy", "10", "--proxy", "auto", api=api, interactive=True, answers=["n"])
+        self.assertEqual(code, 1)
+        self.assertIn("Nothing was changed", out)
+        self.assertEqual(api.updates, [])
+
+        code, _, _ = run("set-proxy", "10", "--proxy", "auto", api=api, interactive=True, answers=["y"])
+        self.assertEqual(code, 0)
+        self.assertEqual(len(api.updates), 1)
+
+    def test_without_a_terminal_it_needs_yes(self):
+        api = FakeApi()
+        code, _, err = run("set-proxy", "10", "--proxy", "auto", api=api, interactive=False)
+        self.assertEqual(code, 1)
+        self.assertIn("--yes", err)
+        self.assertEqual(api.updates, [])
+
+    def test_proxy_without_the_tag_is_refused(self):
+        api = FakeApi()
+        code, _, err = run("set-proxy", "10", "--proxy", "p3", "--yes", api=api)  # p3 is tagged Support
+        self.assertEqual(code, 1)
+        self.assertIn("No proxy with ID 'p3' is tagged 'jericho'", err)
+        self.assertEqual(api.updates, [])
+
+    def test_profile_without_one_tag_needs_proxy_tag(self):
+        api = FakeApi()
+        code, _, err = run("set-proxy", "2", "--proxy", "auto", "--yes", api=api)  # #2 has no tags
+        self.assertEqual(code, 1)
+        self.assertIn("--proxy-tag", err)
+        code, _, _ = run("set-proxy", "2", "--proxy", "auto", "--proxy-tag", "jericho", "--yes", api=api)
+        self.assertEqual(code, 0)
+
+    def test_no_proxy_when_already_none_changes_nothing(self):
+        api = FakeApi()
+        code, out, _ = run("set-proxy", "2", "--no-proxy", "--yes", api=api)
+        self.assertEqual(code, 0)
+        self.assertIn("Nothing to change", out)
+        self.assertEqual(api.updates, [])
+
+    def test_open_browser_gets_a_reopen_hint(self):
+        api = FakeApi()
+        api.open_browsers.add("k1a")
+        _, out, _ = run("set-proxy", "10", "--no-proxy", "--yes", api=api)
+        self.assertIn("close and reopen", out)
+
+    def test_proxy_and_no_proxy_are_mutually_exclusive(self):
+        with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
+            cli.main(["set-proxy", "10", "--proxy", "auto", "--no-proxy"])
+
+
+class TestCreate(unittest.TestCase):
+    def test_create_without_proxy(self):
+        api = FakeApi()
+        code, out, _ = run("create", "Shop 8", "-g", "Jericho", "-t", "jericho", api=api)
+        self.assertEqual(code, 0)
+        self.assertIn('Created #500 "Shop 8"', out)
+        self.assertIn("Proxy: no proxy", out)
+
+    def test_create_with_auto_proxy_uses_the_profile_tag_for_proxies(self):
+        api = FakeApi()
+        code, out, _ = run("create", "Shop 8", "-g", "Jericho", "-t", "jericho", "--proxy", "auto", api=api)
+        self.assertEqual(code, 0)
+        self.assertEqual(api.created[0]["proxyid"], "p2")
+
+    def test_group_and_tag_are_required(self):
+        with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
+            cli.main(["create", "Shop 8"])
+
+    def test_unknown_tag_creates_nothing(self):
+        api = FakeApi()
+        code, _, err = run("create", "x", "-g", "Jericho", "-t", "Jerico", api=api)
+        self.assertEqual(code, 1)
+        self.assertIn("No profile tag", err)
+        self.assertEqual(api.created, [])
+
+
+class TestSafeExit(unittest.TestCase):
+    def test_unknown_group_is_an_error_exit(self):
+        code, _, err = run("profiles", "-g", "nope")
+        self.assertEqual(code, 1)
+        self.assertIn("error:", err)
+
+    def test_ctrl_c_exits_with_130(self):
+        api = FakeApi()
+        api.get_all = mock.Mock(side_effect=KeyboardInterrupt)
+        code, _, err = run("groups", api=api)
+        self.assertEqual(code, 130)
+        self.assertIn("Cancelled", err)
+
+    def test_unexpected_bug_is_logged_not_dumped(self):
+        api = FakeApi()
+        api.get_all = mock.Mock(side_effect=ZeroDivisionError("boom"))
+        with tempfile.TemporaryDirectory() as tmp:
+            log = Path(tmp) / "crash.log"
+            with mock.patch("mrfactory.adspower.cli.app.CRASH_LOG", log):
+                code, _, err = run("groups", api=api)
+            self.assertEqual(code, 1)
+            self.assertIn("unexpected error: ZeroDivisionError: boom", err)
+            self.assertNotIn("Traceback", err)
+            self.assertIn("Traceback", log.read_text(encoding="utf-8"))
+
+    def test_status_when_not_running(self):
+        code, out, _ = run("status", api=FakeApi(running=False))
+        self.assertEqual(code, 1)
+        self.assertIn("not running", out)
+
+    def test_open_launches_the_app(self):
+        with mock.patch("mrfactory.adspower.client.open_adspower", return_value="C:/AdsPower.exe"):
+            code, out, _ = run("open")
+        self.assertEqual(code, 0)
+        self.assertIn("Opened C:/AdsPower.exe", out)
+
+
+if __name__ == "__main__":
+    unittest.main()

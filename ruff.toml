@@ -1,0 +1,24 @@
+# Ruff: linter for the whole workspace (every package and scripts/).
+#   pip install ruff
+#   ruff check .            # report problems
+#   ruff check . --fix      # fix the ones that are safe to fix automatically
+# See docs/ARCHITECTURE.md §9 for why each rule set is on.
+
+line-length = 120
+target-version = "py310"     # matches requires-python in every pyproject.toml
+
+[lint]
+select = [
+    "E", "W",   # pycodestyle: PEP 8 layout
+    "F",        # pyflakes: unused imports/variables, undefined names
+    "I",        # isort: import order (stdlib, third-party, local)
+    "B",        # flake8-bugbear: likely bugs (mutable defaults, ...)
+    "UP",       # pyupgrade: modern syntax for the target Python
+    "SIM",      # flake8-simplify: simpler equivalent code
+]
+ignore = [
+    "SIM108",   # ternaries aren't always clearer than if/else
+]
+
+[lint.isort]
+known-first-party = ["mrfactory", "natural_mouse", "tests"]

@@ -656,6 +656,9 @@ If a link has moved, search the title on the same site.
 - **Official:** PEP 20, the Zen of Python ("Explicit is better than implicit"): <https://peps.python.org/pep-0020/>
 - ✔ `os.startfile` returns as soon as the app is launched: <https://docs.python.org/3/library/os.html#os.startfile>
 
+- ✔ urllib opens `file:` URLs too (Ruff S310's reason): <https://docs.astral.sh/ruff/rules/suspicious-url-open-usage/> · `urllib.parse.urlsplit`: <https://docs.python.org/3/library/urllib.parse.html#urllib.parse.urlsplit>
+- OWASP Input Validation Cheat Sheet: <https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html>
+
 ### §8 Errors
 
 - **Official:** exception hierarchy: <https://docs.python.org/3/library/exceptions.html#exception-hierarchy> · errors tutorial: <https://docs.python.org/3/tutorial/errors.html>
@@ -669,6 +672,8 @@ If a link has moved, search the title on the same site.
 - ✔ `KeyboardInterrupt` inherits from `BaseException`: <https://docs.python.org/3/library/exceptions.html>
 - Windows `GetConsoleMode`: <https://learn.microsoft.com/en-us/windows/console/getconsolemode> · **Official** `ctypes`: <https://docs.python.org/3/library/ctypes.html>
 - The Twelve-Factor App, config in environment variables: <https://12factor.net/config>
+- CWE-532, sensitive information in log files: <https://cwe.mitre.org/data/definitions/532.html> · OWASP Logging Cheat Sheet: <https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html>
+- **Official:** argparse `allow_abbrev`: <https://docs.python.org/3/library/argparse.html#allow-abbrev>
 
 ### §10 Testing
 

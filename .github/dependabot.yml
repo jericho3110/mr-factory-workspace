@@ -1,0 +1,12 @@
+# Dependabot opens pull requests when something this repo depends on has
+# a new version (or a security fix).
+version: 2
+updates:
+  - package-ecosystem: github-actions   # actions/checkout, actions/setup-python in ci.yml
+    directory: /
+    schedule:
+      interval: monthly
+  - package-ecosystem: pip              # opencv-python, numpy lower bounds
+    directory: /packages/mouse-ext
+    schedule:
+      interval: monthly

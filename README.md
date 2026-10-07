@@ -44,6 +44,9 @@ only the packages you need.
 
 ## Before every commit
 
+The same checks also run automatically on GitHub for every push
+([.github/workflows/ci.yml](.github/workflows/ci.yml)).
+
 ```powershell
 ruff check .                            # lint every package (config: ruff.toml)
 python scripts/test_all.py              # test every package
@@ -68,6 +71,9 @@ python scripts/test_all.py adspower     # ...or just one
 
 ```text
 README.md              this file
+SECURITY.md            how to report vulnerabilities; how secrets are handled
+LICENSE                MIT
+.github/               CI workflow (lint + tests) and Dependabot config
 ruff.toml              linter settings for the whole workspace
 docs/
   LEARNING_PATH.md     guided route through the workspace
@@ -81,6 +87,11 @@ packages/
   mouse-ext/           mrfactory-mouse-ext
   adspower/            mrfactory-adspower
 ```
+
+## Security
+
+See [SECURITY.md](SECURITY.md): how to report a problem privately, and
+how the code handles API keys, URLs, and plugins.
 
 ## License
 

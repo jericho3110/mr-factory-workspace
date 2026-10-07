@@ -684,6 +684,28 @@ bisect.
 
 ---
 
+### Security habits, and the public repository's protections
+
+A security review before publishing found one real leak and two
+hardening gaps (details and tests: adspower ARCHITECTURE §4 and §9). The
+general habits behind the fixes:
+
+| Habit | Here |
+| --- | --- |
+| Never write secrets to logs (CWE-532) | the crash log redacts `--api-key` values |
+| Validate input that decides *where* code reads or connects | API URLs must be `http`/`https` |
+| Bound loops that depend on another system | paging stops after 1000 pages |
+| Never commit secrets; ignore them before they exist | `.gitignore` has `.env`, `*.log`; full-history scan before going public |
+| Least privilege | the CI workflow can only *read* the repo (`permissions: contents: read`) |
+| Let tools watch continuously | Ruff's security rules (`S`) in every check; CI on every push |
+
+On GitHub, the public repo also has **secret scanning with push
+protection** (a push containing a recognizable token is blocked),
+**Dependabot** alerts and update PRs ([dependabot.yml](../.github/dependabot.yml)),
+and **private vulnerability reporting**, described in [SECURITY.md](../SECURITY.md).
+
+---
+
 ## 11. Trade-offs and what's not done (yet)
 
 Every design has costs. These ones are known:
@@ -701,9 +723,10 @@ Every design has costs. These ones are known:
   output; switching would be easy since pytest runs `unittest` tests as-is.
 - **Linting, but no auto-formatting or type checking yet.** Ruff checks
   every package (§9). `ruff format` and mypy/Pyright would be the next steps.
-- **No CI.** `scripts/test_all.py` and `ruff check .` already return
-  proper exit codes, so a GitHub Actions workflow could run both on every
-  push. That's the next step to stop relying on remembering to run them.
+- **CI runs adspower only.** GitHub Actions ([ci.yml](../.github/workflows/ci.yml))
+  runs `ruff check .` and adspower's tests on Windows and Linux, on the
+  oldest (3.10) and newest Python. mouse-ext's tests can't run there:
+  they need `natural_mouse`, which is in a private repo.
 - **`sys.path` edits in `tests/__init__.py`.** Convenient (no install
   needed), but slightly magical. The cleaner alternative is "always
   `pip install -e` first, then test".
@@ -815,6 +838,16 @@ If a link has moved, search the title on the same site.
 - **Official:** `gitignore`: <https://git-scm.com/docs/gitignore> · `git commit`: <https://git-scm.com/docs/git-commit>
 - Chris Beams, "How to Write a Git Commit Message": <https://cbea.ms/git-commit/>
 - Keep a Changelog: <https://keepachangelog.com/en/1.1.0/>
+
+### Security habits and repository protections
+
+- CWE-532, "Insertion of Sensitive Information into Log File": <https://cwe.mitre.org/data/definitions/532.html>
+- OWASP Logging Cheat Sheet (what never to log): <https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html>
+- OWASP Input Validation Cheat Sheet: <https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html>
+- Ruff's flake8-bandit (`S`) rules: <https://docs.astral.sh/ruff/rules/#flake8-bandit-s> · S310 (URL schemes): <https://docs.astral.sh/ruff/rules/suspicious-url-open-usage/> · Bandit, the original tool: <https://bandit.readthedocs.io/en/latest/>
+- **Official:** GitHub Actions quickstart: <https://docs.github.com/en/actions/writing-workflows/quickstart> · security hardening (least-privilege `permissions`): <https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions>
+- **Official:** Dependabot configuration: <https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file>
+- **Official:** push protection: <https://docs.github.com/en/code-security/secret-scanning/introduction/about-push-protection> · private vulnerability reporting: <https://docs.github.com/en/code-security/security-advisories/working-with-repository-security-advisories/configuring-private-vulnerability-reporting-for-a-repository> · security policy (SECURITY.md): <https://docs.github.com/en/code-security/getting-started/adding-a-security-policy-to-your-repository>
 
 ### §11 Trade-offs
 

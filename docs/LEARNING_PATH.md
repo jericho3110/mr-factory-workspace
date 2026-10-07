@@ -245,6 +245,8 @@ plugin discovery · controlling a loop through the iterator it consumes.
 2. Run `ruff check .`, then read `ruff.toml`.
 
 **Concepts:** PEP 8 · linters (Ruff) and what each rule set catches ·
+security linting (`S` rules) · secrets never in logs or git · CI on every
+push (`.github/workflows/ci.yml`) · Dependabot · SECURITY.md ·
 fixing causes instead of silencing (`# noqa`) · docstrings that explain
 *why* · commit messages as documentation · changelogs · refactoring
 safely behind tests.

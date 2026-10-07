@@ -1,0 +1,39 @@
+# Runs the same checks as "Before every commit" in the README, on every
+# push and pull request, so nothing depends on remembering to run them.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Least privilege: these jobs only need to read the code.
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.x"
+      - run: pip install ruff
+      - run: ruff check .
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        # The oldest supported Python (requires-python >= 3.10) and the newest.
+        python-version: ["3.10", "3.x"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      # adspower only: mouse-ext needs natural_mouse, a private repository.
+      - run: python scripts/test_all.py adspower

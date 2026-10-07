@@ -6,6 +6,11 @@ __pycache__/
 build/
 dist/
 
+# Secrets and logs: never committed
+.env
+.env.*
+*.log
+
 # Screenshots saved by ScreenshotOnMissPlugin, recorded paths, user templates
 misses/
 *.paths.json

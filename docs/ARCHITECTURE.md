@@ -644,6 +644,7 @@ turned on, and what each one caught the first time it ran on this code:
 | `B` (bugbear) | patterns that are usually bugs | `zip()` without `strict=` (silently drops data if lengths differ); a function call as a default argument |
 | `UP` (pyupgrade) | modern syntax for Python 3.10 | `typing.Callable` → `collections.abc.Callable` (the `typing` aliases are deprecated) |
 | `SIM` (simplify) | simpler equivalents | nested `with` blocks → one `with a, b:` |
+| `S` (flake8-bandit, security) | risky patterns: `urlopen` with unchecked schemes, `subprocess`, `eval`, weak randomness, hard-coded secrets | `urlopen` could open `file://` → URL scheme now validated; `os.startfile` and `random` → intended here, marked `# noqa: S606/S311` with the reason |
 
 **Fix the cause, or explain the exception.** Every finding was either
 fixed or, when the rule didn't apply, the code was changed to make the
@@ -666,6 +667,7 @@ and a type checker (mypy or Pyright, which would check the type hints).
 | Pattern | What it is | Why it's ignored |
 | --- | --- | --- |
 | `venv/`, `.venv/` | The virtual environment | Huge, OS-specific, recreated with one command |
+| `.env`, `.env.*`, `*.log` | Secrets and logs | Must never be published; ignored *before* they ever exist |
 | `__pycache__/`, `*.pyc` | Compiled bytecode Python caches | Regenerated automatically |
 | `*.egg-info/`, `build/`, `dist/` | Build and install artifacts | Produced by pip/setuptools |
 | `misses/`, `*.paths.json`, `templates/*` | Screenshots, recorded paths, user templates | Personal runtime data, not source |

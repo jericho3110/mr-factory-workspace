@@ -54,6 +54,7 @@ class TestListing(unittest.TestCase):
 
     def test_tags(self):
         code, out, _ = run("tags")
+        self.assertEqual(code, 0)
         self.assertIn("Sales", out)
         self.assertIn("2 tags", out)
 
@@ -65,18 +66,21 @@ class TestListing(unittest.TestCase):
 
     def test_profiles_by_tag(self):
         code, out, _ = run("profiles", "-t", "JERICHO")
+        self.assertEqual(code, 0)
         self.assertIn("John Shop", out)
         self.assertIn("1 profile\n", out)
 
     def test_search_as_json(self):
         code, out, _ = run("search", "john", "--json")
         rows = json.loads(out)
+        self.assertEqual(code, 0)
         self.assertEqual({row["id"] for row in rows}, {"k1a", "k2a"})
         self.assertEqual(rows[0]["tags"], ["Sales"])
 
     def test_proxies_by_tag_hide_passwords(self):
         code, out, _ = run("proxies", "-t", "jericho", "--unused", "--json")
         rows = json.loads(out)
+        self.assertEqual(code, 0)
         self.assertEqual([row["id"] for row in rows], ["p2"])
         self.assertNotIn("secret", out)
 
@@ -99,7 +103,7 @@ class TestOpenProfile(unittest.TestCase):
 
     def test_enter_cancels_the_choice(self):
         api = FakeApi()
-        code, out, _ = run("open-profile", "shop", api=api, interactive=True, answers=[""])
+        code, _, _ = run("open-profile", "shop", api=api, interactive=True, answers=[""])
         self.assertEqual(code, 1)
         self.assertEqual(api.open_browsers, set())
 
@@ -114,7 +118,7 @@ class TestOpenProfile(unittest.TestCase):
     def test_close_profile(self):
         api = FakeApi()
         api.open_browsers.add("k1b")
-        code, out, _ = run("close-profile", "2", api=api)
+        code, _, _ = run("close-profile", "2", api=api)
         self.assertEqual(code, 0)
         self.assertEqual(api.open_browsers, set())
 
@@ -188,7 +192,7 @@ class TestCreate(unittest.TestCase):
 
     def test_create_with_auto_proxy_uses_the_profile_tag_for_proxies(self):
         api = FakeApi()
-        code, out, _ = run("create", "Shop 8", "-g", "Jericho", "-t", "jericho", "--proxy", "auto", api=api)
+        code, _, _ = run("create", "Shop 8", "-g", "Jericho", "-t", "jericho", "--proxy", "auto", api=api)
         self.assertEqual(code, 0)
         self.assertEqual(api.created[0]["proxyid"], "p2")
 
@@ -223,11 +227,33 @@ class TestSafeExit(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             log = Path(tmp) / "crash.log"
             with mock.patch("mrfactory.adspower.cli.app.CRASH_LOG", log):
-                code, _, err = run("groups", api=api)
+                code, _, err = run("groups", "--api-key", "SECRET-1", api=api)
+                run("groups", "--api-key=SECRET-2", api=api)
+            text = log.read_text(encoding="utf-8")
             self.assertEqual(code, 1)
             self.assertIn("unexpected error: ZeroDivisionError: boom", err)
             self.assertNotIn("Traceback", err)
-            self.assertIn("Traceback", log.read_text(encoding="utf-8"))
+            self.assertIn("Traceback", text)
+            self.assertIn("adspower groups --api-key ***", text)   # the command is logged...
+            self.assertNotIn("SECRET", text)                        # ...but never the key
+
+    def test_redact_hides_secret_values_in_both_forms(self):
+        self.assertEqual(cli.app.redact(["groups", "--api-key", "k", "--json"]),
+                         ["groups", "--api-key", "***", "--json"])
+        self.assertEqual(cli.app.redact(["--api-key=k", "groups"]), ["--api-key=***", "groups"])
+        self.assertEqual(cli.app.redact(["--api-url", "http://x"]), ["--api-url", "http://x"])
+
+    def test_abbreviated_options_are_rejected(self):
+        # argparse would otherwise accept --api-k as --api-key, slipping past redact()
+        with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
+            cli.main(["groups", "--api-k", "SECRET"])
+
+    def test_non_http_api_url_is_an_error_not_a_file_read(self):
+        # Not run(): that replaces LocalApi with a fake, and the check lives in the real one.
+        with contextlib.redirect_stderr(io.StringIO()) as err:
+            code = cli.main(["groups", "--api-url", "file:///C:/Windows/win.ini"])
+        self.assertEqual(code, 1)
+        self.assertIn("must start with http:// or https://", err.getvalue())
 
     def test_status_when_not_running(self):
         code, out, _ = run("status", api=FakeApi(running=False))

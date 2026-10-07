@@ -94,7 +94,7 @@ checkers still understand the hint.
 | Module | What we use | Where | Why |
 | --- | --- | --- | --- |
 | `urllib.request` | `Request`, `urlopen` | `api.py` | Send GET/POST requests. Enough for a local JSON API, so no `requests` dependency (§7) |
-| `urllib.parse` | `urlencode` | `api.py` | Build `?user_id=k1a&page=2` safely (escapes special characters) |
+| `urllib.parse` | `urlencode`, `urlsplit` | `api.py` | Build `?user_id=k1a&page=2` safely (escapes special characters); `urlsplit(url).scheme` checks that a URL is http(s) before anything is opened |
 | `urllib.error` | `URLError`, `HTTPError` | `api.py` | Tell "nobody answered" (`URLError` → `AdsPowerNotRunning`) from "answered with an error" (`HTTPError` → `AdsPowerApiError`). `HTTPError` is a subclass of `URLError`, so it's caught **first** |
 
 ### Time, math, randomness

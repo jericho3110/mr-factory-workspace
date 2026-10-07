@@ -192,6 +192,19 @@ timeouts or other errors.
 `raise ... from e` (**exception chaining**) so the original stays
 attached for debugging. Nothing above `api.py` knows `urllib` exists.
 
+**Validate input that controls where requests go.** `urllib` opens
+more than web addresses: given `file:///C:/...` it would read a local
+file. So `LocalApi` accepts only `http://` and `https://` base URLs
+(`ALLOWED_SCHEMES`) and raises `ConfigError` for anything else. Ruff's
+security rule S310 flags every `urlopen` for this reason; the two
+`Request(...)` lines carry a `# noqa: S310` comment that says *why*
+it's safe (the scheme was checked in `__init__`).
+
+**Bound every loop that depends on someone else.** Paging stops at the
+first short page, but an API that ignored the page number would send
+full pages forever. `MAX_PAGES` (1000) turns that into an error. A loop
+whose end depends on an outside system should always have a limit.
+
 **Dependency injection.** `LocalApi(opener=...)` receives the function
 that actually sends requests (default `urllib.request.urlopen`). Tests
 pass `FakeOpener`, so they check real URL/JSON building without a network.
@@ -352,6 +365,7 @@ the plan and ask *between* them (§9).
 AdsPowerError
 ├── AdsPowerNotRunning     nobody answered at the API address
 ├── AdsPowerApiError       it answered, but refused (code != 0, HTTP error, bad JSON)
+├── ConfigError            a setting is invalid (e.g. an --api-url that isn't http/https)
 ├── NotFound               a lookup found nothing
 │   ├── GroupNotFound
 │   ├── TagNotFound
@@ -423,6 +437,19 @@ user, but it isn't lost either: it's appended to
 command. `KeyboardInterrupt` is a `BaseException`, not an `Exception`, so it
 needs its own `except` (a plain `except Exception` would let Ctrl+C
 through as a raw traceback).
+
+**Never write secrets to logs.** The crash log records the command
+that failed, and that command may contain `--api-key SECRET`. Logs end
+up in bug reports, backups, and screenshots, so `redact()` replaces
+secret option values with `***` before anything is written (both
+`--api-key X` and `--api-key=X` forms). One subtlety: argparse normally
+accepts *abbreviated* options (`--api-k` means `--api-key`), which
+`redact()` wouldn't recognize, so every parser is built with
+`allow_abbrev=False`. This class of bug has a name: CWE-532,
+"Insertion of Sensitive Information into Log File". A security review
+found it; `test_unexpected_bug_is_logged_not_dumped` now proves the key
+never reaches the file. (Passing the key via `ADSPOWER_API_KEY` is
+still better: it stays out of shell history and process lists too.)
 
 ### Plan → confirm → apply (for changes)
 
@@ -544,6 +571,8 @@ finding became a test:
 | `open-profile ""` matched every profile in the account | reject blank text | `test_blank_text_matches_nothing_instead_of_everything` |
 | A new profile can't open while AdsPower downloads its browser | error says "wait and retry" | `test_browser_still_downloading_gets_a_hint` |
 | Windows `< NUL` looks like a terminal | console-mode check | `test_windows_nul_is_not_a_console` |
+| *Security review:* the crash log saved `--api-key` values in plain text | `redact()` + `allow_abbrev=False` | `test_redact_hides_secret_values_in_both_forms` |
+| *Security review:* `--api-url file:///...` would make urllib read a local file | only http/https allowed | `test_only_http_and_https_urls_are_allowed` |
 | Looking up one serial downloaded ~500 profiles (~3 s) | exact lookup on the server (0.4 s) | `test_serial_number_is_one_request` |
 | Profile tag `jericho` vs proxy tag `Jericho` | all name matching ignores case | `test_filters_by_tag_ignoring_case_and_by_unused` |
 

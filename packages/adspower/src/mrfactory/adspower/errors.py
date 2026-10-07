@@ -7,6 +7,7 @@ specific subclass.
     AdsPowerError
     ├── AdsPowerNotRunning     nobody answered at the API address
     ├── AdsPowerApiError       it answered, but refused
+    ├── ConfigError            a setting is invalid (e.g. --api-url)
     ├── NotFound               a lookup found nothing
     │   ├── GroupNotFound
     │   ├── TagNotFound
@@ -29,6 +30,10 @@ class AdsPowerNotRunning(AdsPowerError):
 
 class AdsPowerApiError(AdsPowerError):
     """The Local API answered, but reported a failure (code != 0)."""
+
+
+class ConfigError(AdsPowerError):
+    """A setting is invalid, e.g. an --api-url that isn't http(s)."""
 
 
 class NotFound(AdsPowerError):

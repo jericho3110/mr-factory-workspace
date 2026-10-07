@@ -117,7 +117,7 @@ def cmd_set_proxy(ads: AdsPower, args: argparse.Namespace) -> int:
         new = None
     else:
         tag = args.proxy_tag or _only_tag(profile)
-        new = ads.choose_proxy(tag=tag, proxy_id=None if args.proxy.lower() == "auto" else args.proxy)
+        new = ads.choose_proxy(tag=tag, proxy_id=_proxy_id(args.proxy))
 
     current = profile.proxy or "no proxy"
     planned = describe_proxy(new)
@@ -148,7 +148,7 @@ def cmd_create(ads: AdsPower, args: argparse.Namespace) -> int:
     proxy = None
     if args.proxy:
         proxy_tag = args.proxy_tag or args.tag
-        proxy = ads.choose_proxy(tag=proxy_tag, proxy_id=None if args.proxy.lower() == "auto" else args.proxy)
+        proxy = ads.choose_proxy(tag=proxy_tag, proxy_id=_proxy_id(args.proxy))
 
     profile = ads.create_profile(args.name, group=args.group, tag=args.tag, proxy=proxy, remark=args.remark)
     if args.json:
@@ -186,3 +186,8 @@ def _only_tag(profile: Profile) -> str:
     raise AdsPowerError(
         f"{describe_profile(profile)} has {have}: pass --proxy-tag to say which proxies are allowed."
     )
+
+
+def _proxy_id(choice: str) -> str | None:
+    """--proxy takes 'auto' (pick one: None) or a proxy ID."""
+    return None if choice.lower() == "auto" else choice

@@ -14,6 +14,21 @@ version is `0.x`, any release may change how things work.
 
 - `adspower --version` and `mrfactory.adspower.__version__`, read from
   the installed metadata so the version lives only in `pyproject.toml`.
+- `ConfigError` for invalid settings.
+
+### Security
+
+- The crash log no longer records the API key: `--api-key` values are
+  replaced with `***` (both `--api-key X` and `--api-key=X`), and option
+  abbreviations (`--api-k`) are rejected so they can't slip past.
+- `--api-url` / `ADSPOWER_API_URL` must be `http://` or `https://`;
+  `urllib` would otherwise also open `file://` URLs.
+
+### Fixed
+
+- Paging stops with an error after 1000 full pages instead of looping
+  forever if the API ignored the page number.
+- The crash log records the arguments `main()` was given, not `sys.argv`.
 
 ## 0.3.0 (2026-10-07)
 

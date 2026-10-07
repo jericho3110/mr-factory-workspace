@@ -2,8 +2,9 @@ import json
 import unittest
 import urllib.error
 import urllib.parse
+from unittest import mock
 
-from mrfactory.adspower import AdsPowerApiError, AdsPowerNotRunning, LocalApi
+from mrfactory.adspower import AdsPowerApiError, AdsPowerNotRunning, ConfigError, LocalApi
 from tests.fakes import FakeOpener
 
 
@@ -70,6 +71,21 @@ class TestLocalApi(unittest.TestCase):
         self.assertEqual(api.post_all("/list", limit=2, group_id="7"), [1, 2, 3])
         bodies = [json.loads(r.data) for r in opener.requests]
         self.assertEqual(bodies, [{"group_id": "7", "page": 1, "limit": 2}, {"group_id": "7", "page": 2, "limit": 2}])
+
+    def test_only_http_and_https_urls_are_allowed(self):
+        for bad in ("file:///C:/Windows/win.ini", "ftp://host", "127.0.0.1:50325"):
+            with self.assertRaises(ConfigError):
+                LocalApi(base_url=bad)
+        self.assertEqual(LocalApi(base_url="https://host/").base_url, "https://host")
+
+    def test_paging_stops_if_the_api_ignores_the_page_number(self):
+        api, opener = make_api(*[ok({"list": [1, 2]})] * 5)
+        with (
+            mock.patch("mrfactory.adspower.api.MAX_PAGES", 3),
+            self.assertRaisesRegex(AdsPowerApiError, "3 full pages"),
+        ):
+            api.get_all("/list", page_size=2)
+        self.assertEqual(len(opener.requests), 3)
 
     def test_unreachable_api_means_not_running(self):
         api, _ = make_api(urllib.error.URLError("refused"))

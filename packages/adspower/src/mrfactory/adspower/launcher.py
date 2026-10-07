@@ -34,7 +34,7 @@ def open_app(path: str | Path) -> Path:
     path = Path(path)
     if not path.is_file():
         raise FileNotFoundError(f"Application not found: {path}")
-    os.startfile(path)
+    os.startfile(path)  # noqa: S606 - launching the given app is the point; path checked above
     return path
 
 

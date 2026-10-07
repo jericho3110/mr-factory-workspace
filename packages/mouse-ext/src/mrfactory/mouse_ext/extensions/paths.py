@@ -38,7 +38,7 @@ class FittsPathGenerator(PathGenerator):
     def generate(self, start: Point, end: Point) -> Path:
         path = self._inner.generate(start, end)
         wanted = self.movement_time(start.distance_to(end))
-        wanted *= random.uniform(1 - self.variability, 1 + self.variability)
+        wanted *= random.uniform(1 - self.variability, 1 + self.variability)  # noqa: S311 - timing jitter, not security
         scale = wanted / path.total_duration if path.total_duration > 0 else 1.0
         return Path([PathPoint(p.x, p.y, p.delay * scale) for p in path])
 

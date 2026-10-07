@@ -15,6 +15,7 @@ select = [
     "B",        # flake8-bugbear: likely bugs (mutable defaults, ...)
     "UP",       # pyupgrade: modern syntax for the target Python
     "SIM",      # flake8-simplify: simpler equivalent code
+    "S",        # flake8-bandit: security checks (unsafe URL schemes, subprocess, eval, ...)
 ]
 ignore = [
     "SIM108",   # ternaries aren't always clearer than if/else

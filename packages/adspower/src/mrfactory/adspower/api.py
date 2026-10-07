@@ -21,7 +21,7 @@ import urllib.parse
 import urllib.request
 from collections.abc import Callable
 
-from .errors import AdsPowerApiError, AdsPowerNotRunning
+from .errors import AdsPowerApiError, AdsPowerNotRunning, ConfigError
 
 DEFAULT_API_URL = "http://127.0.0.1:50325"
 
@@ -33,6 +33,15 @@ DEFAULT_MIN_INTERVAL = 0.5
 # limit, so a refusal is retried a few times after a pause.
 RATE_LIMIT_RETRIES = 3
 DEFAULT_RETRY_DELAY = 1.0
+
+# Paging stops at the first short page. If an API ever ignored the page
+# number and kept sending full pages, the loop would never end; this cap
+# turns that into an error instead (1000 pages = 100,000+ profiles).
+MAX_PAGES = 1000
+
+# Only these URL schemes may be opened. urllib also understands file:// and
+# others, so an unchecked --api-url could make it read local files.
+ALLOWED_SCHEMES = ("http", "https")
 
 
 class LocalApi:
@@ -50,6 +59,8 @@ class LocalApi:
         needed if API security verification is turned on in AdsPower.
         `opener` is swappable so tests never make real requests."""
         self.base_url = (base_url or os.environ.get("ADSPOWER_API_URL") or DEFAULT_API_URL).rstrip("/")
+        if urllib.parse.urlsplit(self.base_url).scheme not in ALLOWED_SCHEMES:
+            raise ConfigError(f"API URL must start with http:// or https://, got {self.base_url!r}.")
         self.api_key = api_key or os.environ.get("ADSPOWER_API_KEY")
         self.timeout = timeout
         self.min_interval = min_interval
@@ -110,9 +121,9 @@ class LocalApi:
             url += "?" + urllib.parse.urlencode(query)
 
         if body is None:
-            request = urllib.request.Request(url)
+            request = urllib.request.Request(url)  # noqa: S310 - scheme checked in __init__
         else:
-            request = urllib.request.Request(url, data=json.dumps(body).encode(), method="POST")
+            request = urllib.request.Request(url, data=json.dumps(body).encode(), method="POST")  # noqa: S310
             request.add_header("Content-Type", "application/json")
         if self.api_key:
             request.add_header("Authorization", f"Bearer {self.api_key}")
@@ -152,9 +163,10 @@ def _read_all_pages(fetch_page: Callable[[int], dict], page_size: int) -> list[d
     than `page_size` items, and return all items."""
     items: list[dict] = []
     page = 1
-    while True:
+    while page <= MAX_PAGES:
         batch = fetch_page(page).get("list") or []
         items.extend(batch)
         if len(batch) < page_size:
             return items
         page += 1
+    raise AdsPowerApiError(f"Stopped after {MAX_PAGES} full pages; the API may be ignoring the page number.")

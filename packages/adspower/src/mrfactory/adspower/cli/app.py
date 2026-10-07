@@ -49,6 +49,9 @@ ADSPOWER_API_KEY.
 # Unexpected crashes are written here, so the full details aren't lost.
 CRASH_LOG = Path(os.environ.get("LOCALAPPDATA") or tempfile.gettempdir()) / "mrfactory" / "adspower-crash.log"
 
+# Options whose values must never be written anywhere (logs, crash reports).
+SECRET_OPTIONS = ("--api-key",)
+
 
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the command and return its exit code. Every way the command
@@ -64,6 +67,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     owns their browsers, not this program.
     """
     parser = build_parser()
+    argv = sys.argv[1:] if argv is None else list(argv)
     args = parser.parse_args(argv)
     if args.command is None:
         parser.print_help()
@@ -79,7 +83,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"error: {e}", file=sys.stderr)
         return 1
     except Exception as e:  # a bug: don't show a raw traceback, but don't lose it either
-        where = save_crash_report()
+        where = save_crash_report(argv)
         print(f"unexpected error: {type(e).__name__}: {e}", file=sys.stderr)
         print(f"Full details saved to {where}" if where else traceback.format_exc(), file=sys.stderr)
         return 1
@@ -87,7 +91,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     # Options every command accepts, so they can go after the command name.
-    common = argparse.ArgumentParser(add_help=False)
+    # allow_abbrev=False everywhere: argparse would otherwise also accept
+    # prefixes like --api-k, which redact() below wouldn't recognize.
+    common = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
     common.add_argument("--json", action="store_true", help="print JSON instead of a table")
     common.add_argument("--api-url", metavar="URL",
                         help="Local API address (default: ADSPOWER_API_URL or http://127.0.0.1:50325)")
@@ -96,6 +102,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser(
         prog="adspower",
+        allow_abbrev=False,
         description="Open AdsPower; look up groups, tags, profiles, and proxies; open, create, and re-proxy profiles.",
         epilog=EXAMPLES,
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -104,7 +111,8 @@ def build_parser() -> argparse.ArgumentParser:
     subcommands = parser.add_subparsers(dest="command", title="commands", metavar="<command>")
 
     def command(name: str, run: Callable, help: str) -> argparse.ArgumentParser:
-        sub = subcommands.add_parser(name, parents=[common], help=help, description=help[0].upper() + help[1:] + ".")
+        sub = subcommands.add_parser(name, parents=[common], help=help, allow_abbrev=False,
+                                     description=help[0].upper() + help[1:] + ".")
         sub.set_defaults(run=run)
         return sub
 
@@ -167,14 +175,34 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def save_crash_report() -> Path | None:
+def save_crash_report(argv: Sequence[str]) -> Path | None:
     """Append the current exception's traceback to CRASH_LOG. Returns
     the path, or None if even that failed."""
     try:
         CRASH_LOG.parent.mkdir(parents=True, exist_ok=True)
         with CRASH_LOG.open("a", encoding="utf-8") as log:
-            log.write(f"\n--- {datetime.now():%Y-%m-%d %H:%M:%S}  adspower {' '.join(sys.argv[1:])}\n")
+            log.write(f"\n--- {datetime.now():%Y-%m-%d %H:%M:%S}  adspower {' '.join(redact(argv))}\n")
             log.write(traceback.format_exc())
         return CRASH_LOG
     except OSError:
         return None
+
+
+def redact(argv: Sequence[str]) -> list[str]:
+    """A copy of `argv` safe to write to a log: the values of secret
+    options are replaced, in both `--api-key VALUE` and `--api-key=VALUE`
+    form. The real key must never end up in a file on disk."""
+    safe: list[str] = []
+    hide_next = False
+    for arg in argv:
+        if hide_next:
+            safe.append("***")
+            hide_next = False
+            continue
+        name, has_value, _ = arg.partition("=")
+        if name in SECRET_OPTIONS:
+            safe.append(f"{name}=***" if has_value else arg)
+            hide_next = not has_value
+        else:
+            safe.append(arg)
+    return safe

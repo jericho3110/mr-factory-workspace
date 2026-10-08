@@ -187,6 +187,8 @@ def build_parser() -> argparse.ArgumentParser:
     many.add_argument("-t", "--tag", required=True, metavar="TAG", help="profile tag to give them (must exist)")
     many.add_argument("--proxy-tag", metavar="TAG", help="tag the proxies must have (default: same as --tag)")
     many.add_argument("--remark", default="", help="remark for every new profile")
+    many.add_argument("--allow-similar", action="store_true",
+                      help="only block exact duplicate names (default: also 'Shop 8' vs 'shop-8')")
     many.add_argument("--check", action="store_true",
                       help="then open each new profile and check its proxy (needs Playwright)")
     many.add_argument("-y", "--yes", action="store_true", help="don't ask for confirmation")

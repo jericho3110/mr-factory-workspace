@@ -67,7 +67,7 @@ def print_batch_plan(batch: Batch) -> None:
     print(f"Group: {s.group.name}   Profile tag: {s.tag.name}   Proxy tag: {s.proxy_tag}"
           + (f"   Remark: {s.remark}" if s.remark else ""))
     print_table(["#", "NAME", "PLAN", "PROXY"],
-                [[i + 1, shorten(p.name, 40), p.status.value, p.proxy.address if p.proxy else ""]
+                [[i + 1, shorten(p.name, 40), shorten(p.note, 60), p.proxy.address if p.proxy else ""]
                  for i, p in enumerate(batch.planned)])
 
 

@@ -169,7 +169,7 @@ def cmd_create_many(ads: AdsPower, args: argparse.Namespace) -> int:
     if not names:
         raise AdsPowerError("No names given: list them, or use --from-file FILE.")
     batch = ads.plan_batch(names, group=args.group, tag=args.tag, proxy_tag=args.proxy_tag,
-                           remark=args.remark)
+                           remark=args.remark, allow_similar=args.allow_similar)
     if not args.json:
         print_batch_plan(batch)
         print(f"\n{batch.summary()}")

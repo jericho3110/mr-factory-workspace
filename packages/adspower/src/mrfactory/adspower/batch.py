@@ -23,16 +23,25 @@ Rules:
   unused = no profile uses it (`Proxy.in_use` is False) and this batch
   hasn't handed it out. When proxies run out, the remaining names are
   *not* created.
-- A name that **already exists** (ignoring upper/lower case) is skipped,
-  so running the same list twice creates nothing new. A name repeated in
-  the list is created once. Names over 100 characters are refused
-  (AdsPower's limit).
+- **No duplicates.** A name that already exists anywhere in the account
+  is skipped, and so is a *similar* one: case, spaces, `-`, `_` and `.`
+  are ignored, so `Shop 8`, `shop-8` and `SHOP_8` are the same name
+  (`name_key`). The existing profile is named in the result. Pass
+  `allow_similar=True` to only block exact (case-insensitive) matches.
+  The check runs twice: when planning, and again right before creating
+  (a fresh profile list), so running the same batch twice, or a profile
+  created meanwhile elsewhere, never produces a duplicate.
+- Names over 100 characters are refused (AdsPower's limit). A name
+  repeated in the list is created once.
+- **Only tagged proxies.** Every proxy used carries the proxy tag; this
+  is checked again right before creating, whatever the plan says.
 - One failure doesn't stop the batch; `stop()` takes effect between
   profiles, never in the middle of one.
 """
 
 from __future__ import annotations
 
+import re
 import threading
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
@@ -51,6 +60,7 @@ class PlanStatus(Enum):
     READY = "ready"
     EXISTS = "already exists"
     REPEATED = "repeated"
+    SIMILAR = "similar name exists"
     TOO_LONG = "name too long"
     NO_PROXY = "no free proxy"
 
@@ -60,10 +70,49 @@ class Planned:
     name: str
     status: PlanStatus
     proxy: Proxy | None = None      # set when READY
+    existing: Profile | None = None  # the profile it clashes with (EXISTS / SIMILAR)
 
     @property
     def ready(self) -> bool:
         return self.status is PlanStatus.READY
+
+    @property
+    def note(self) -> str:
+        """'similar name exists: #16 Shop-8', or just the status."""
+        if self.existing is None:
+            return self.status.value
+        return f"{self.status.value}: #{self.existing.serial_number} {self.existing.name.strip()}"
+
+
+_SEPARATORS = re.compile(r"[\s._-]+")
+
+
+def name_key(name: str) -> str:
+    """What makes two names "the same" for the duplicate check: case,
+    spaces, '-', '_' and '.' are ignored. 'Shop 8' -> 'shop8'."""
+    return _SEPARATORS.sub("", name.casefold())
+
+
+class NameIndex:
+    """The account's profile names, for finding duplicates quickly."""
+
+    def __init__(self, profiles: Iterable[Profile] = ()):
+        self._exact: dict[str, Profile] = {}
+        self._similar: dict[str, Profile] = {}
+        for profile in profiles:
+            self.add(profile)
+
+    def add(self, profile: Profile) -> None:
+        self._exact.setdefault(profile.name.strip().casefold(), profile)
+        self._similar.setdefault(name_key(profile.name), profile)
+
+    def clash(self, name: str, allow_similar: bool = False) -> tuple[PlanStatus, Profile] | None:
+        """(EXISTS or SIMILAR, the existing profile), or None if the name is free."""
+        found = self._exact.get(name.strip().casefold())
+        if found is not None:
+            return PlanStatus.EXISTS, found
+        found = None if allow_similar else self._similar.get(name_key(name))
+        return (PlanStatus.SIMILAR, found) if found is not None else None
 
 
 @dataclass(frozen=True)
@@ -76,6 +125,7 @@ class BatchSettings:
     tag: Tag
     proxy_tag: str
     remark: str = ""        # written into every new profile (optional)
+    allow_similar: bool = False  # True: only exact name matches count as duplicates
 
 
 @dataclass(frozen=True)
@@ -102,21 +152,25 @@ def free_proxies(proxies: Iterable[Proxy]) -> list[Proxy]:
     return [proxy for proxy in proxies if not proxy.in_use]
 
 
-def plan(names: Sequence[str], existing: Sequence[Profile], free: Sequence[Proxy]) -> list[Planned]:
+def plan(names: Sequence[str], existing: Sequence[Profile], free: Sequence[Proxy],
+         allow_similar: bool = False) -> list[Planned]:
     """Decide every name's fate and hand out one free proxy per new
-    profile, in list order. Pure: no AdsPower calls."""
-    taken = {profile.name.strip().casefold() for profile in existing}
+    profile, in list order. Pure: no AdsPower calls. `existing` should be
+    every profile in the account (not one group), so a name used in
+    another group counts as a duplicate too."""
+    index = NameIndex(existing)
     seen: set[str] = set()
     proxies = iter(free)
     result = []
     for name in names:
-        key = name.casefold()
+        key = name.strip().casefold() if allow_similar else name_key(name)
+        clash = index.clash(name, allow_similar)
         if len(name) > NAME_MAX:
             result.append(Planned(name, PlanStatus.TOO_LONG))
         elif key in seen:
             result.append(Planned(name, PlanStatus.REPEATED))
-        elif key in taken:
-            result.append(Planned(name, PlanStatus.EXISTS))
+        elif clash is not None:
+            result.append(Planned(name, clash[0], existing=clash[1]))
         else:
             seen.add(key)
             proxy = next(proxies, None)
@@ -173,14 +227,24 @@ class BatchCreator:
         return self._stop.is_set()
 
     def run(self, planned: Sequence[Planned], settings: BatchSettings) -> list[Created]:
-        still_free = {p.id: p for p in free_proxies(self.ads.proxies(tag=settings.proxy_tag))}
+        # Fresh reads, right before creating: the plan may be minutes old.
+        # Only proxies that really carry the tag (checked here, not trusted
+        # from the caller) and that no profile uses are candidates.
+        tagged = [p for p in self.ads.proxies(tag=settings.proxy_tag) if p.has_tag(settings.proxy_tag)]
+        still_free = {p.id: p for p in free_proxies(tagged)}
         given_out = {p.proxy.id for p in planned if p.ready and p.proxy.id in still_free}
+        names = NameIndex(self.ads.profiles())     # every profile in the account, now
         results = []
         for index, item in enumerate(planned):
             if self._stop.is_set():
                 result = Created(index, item.name, Outcome.NOT_RUN)
             elif not item.ready:
-                result = Created(index, item.name, Outcome.SKIPPED, item.status.value)
+                result = Created(index, item.name, Outcome.SKIPPED, item.note)
+            elif (clash := names.clash(item.name, settings.allow_similar)) is not None:
+                status, profile = clash
+                result = Created(index, item.name, Outcome.SKIPPED,
+                                 f"{status.value}: #{profile.serial_number} {profile.name.strip()} "
+                                 "(created after the plan)")
             else:
                 proxy = _proxy_for(item, still_free, given_out)
                 if proxy is None:
@@ -188,6 +252,8 @@ class BatchCreator:
                                      f"no free proxy tagged {settings.proxy_tag!r} left")
                 else:
                     result = self._create(index, item.name, settings, proxy)
+                    if result.profile is not None:
+                        names.add(result.profile)
             results.append(result)
             self.on_result(result)
         return results

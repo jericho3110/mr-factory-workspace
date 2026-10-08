@@ -15,6 +15,7 @@ from mrfactory.adspower import (
     Tag,
     TagNotFound,
     free_proxies,
+    name_key,
     plan,
     results_text,
     summarize,
@@ -39,14 +40,18 @@ class FakeAds:
     """Just what BatchCreator calls: proxies(tag=) and create_profile().
     Marks a proxy used when it's given out, as AdsPower does."""
 
-    def __init__(self, proxies):
+    def __init__(self, proxies, profiles=()):
         self.proxy_list = list(proxies)
+        self.profile_list = list(profiles)
         self.created = []
         self.fail = {}
         self.before_create = None
 
     def proxies(self, tag=None, unused=False):
-        return list(self.proxy_list)
+        return list(self.proxy_list)     # ignores `tag` on purpose: the creator must check tags itself
+
+    def profiles(self, group=None, tag=None):
+        return list(self.profile_list)
 
     def create_profile(self, name, group, tag, proxy=None, remark=""):
         if self.before_create:
@@ -56,8 +61,10 @@ class FakeAds:
         if any(c[1] == proxy.id for c in self.created):
             raise AssertionError("proxy given out twice")
         self.created.append((name, proxy.id, remark))
-        return Profile(id=f"new{len(self.created)}", serial_number=str(500 + len(self.created)), name=name,
-                       group_id=group.id, group_name=group.name)
+        new = Profile(id=f"new{len(self.created)}", serial_number=str(500 + len(self.created)), name=name,
+                      group_id=group.id, group_name=group.name)
+        self.profile_list.append(new)
+        return new
 
 
 class TestPlan(unittest.TestCase):
@@ -76,6 +83,21 @@ class TestPlan(unittest.TestCase):
     def test_runs_out_of_proxies(self):
         self.assertEqual([p.status for p in plan(["A", "B"], [], [proxy("10")])],
                          [PlanStatus.READY, PlanStatus.NO_PROXY])
+
+    def test_similar_names_are_duplicates(self):
+        existing = [Profile(id="x", serial_number="16", name="Shop-8", group_id="g", group_name="Other")]
+        planned = plan(["shop 8", "SHOP_8", "Shop.9", "shop9"], existing, [proxy("10"), proxy("12")])
+        self.assertEqual([p.status for p in planned],
+                         [PlanStatus.SIMILAR, PlanStatus.SIMILAR, PlanStatus.READY, PlanStatus.REPEATED])
+        self.assertEqual(planned[0].note, "similar name exists: #16 Shop-8")
+
+    def test_allow_similar_only_blocks_exact_names(self):
+        existing = [profile("Shop-8")]
+        planned = plan(["shop 8", "SHOP-8"], existing, [proxy("10")], allow_similar=True)
+        self.assertEqual([p.status for p in planned], [PlanStatus.READY, PlanStatus.EXISTS])
+
+    def test_name_key(self):
+        self.assertEqual(name_key(" Shop-Eig_ht.X "), "shopeightx")
 
     def test_free_proxies(self):
         self.assertEqual([p.id for p in free_proxies([proxy("10"), proxy("11", used=1)])], ["10"])
@@ -109,6 +131,38 @@ class TestBatchCreator(unittest.TestCase):
         ads.proxy_list[0] = proxy("10", used=1)
         result = BatchCreator(ads).run(planned, SETTINGS)[0]
         self.assertEqual((result.outcome, result.message), (Outcome.SKIPPED, "no free proxy tagged 'Acme' left"))
+
+    def test_running_the_same_batch_twice_creates_nothing_the_second_time(self):
+        # Regression (asked for): Create pressed twice, or a profile made
+        # elsewhere after the plan. The creator re-reads the account first.
+        ads = FakeAds([proxy("10"), proxy("12"), proxy("14")])
+        planned = plan(["A", "B"], [], free_proxies(ads.proxies()))
+        BatchCreator(ads).run(planned, SETTINGS)
+
+        again = BatchCreator(ads).run(planned, SETTINGS)
+
+        self.assertEqual([r.outcome for r in again], [Outcome.SKIPPED, Outcome.SKIPPED])
+        self.assertEqual(again[0].message, "already exists: #501 A (created after the plan)")
+        self.assertEqual(len(ads.created), 2)
+
+    def test_similar_profile_created_after_the_plan_is_caught(self):
+        ads = FakeAds([proxy("10")])
+        planned = plan(["Shop 8"], [], free_proxies(ads.proxies()))
+        ads.profile_list.append(profile("shop-8"))            # someone made it meanwhile
+        result = BatchCreator(ads).run(planned, SETTINGS)[0]
+        self.assertEqual(result.outcome, Outcome.SKIPPED)
+        self.assertTrue(result.message.startswith("similar name exists"))
+
+    def test_never_uses_a_proxy_without_the_tag(self):
+        # Even if the plan (or the API) offers one: tags are re-checked at creation.
+        other = Proxy(id="99", type="socks5", host="203.0.113.99", port="1080", tags=("Other",))
+        ads = FakeAds([other, proxy("10")])
+        planned = plan(["A", "B"], [], [other, proxy("10")])   # a plan built from the wrong list
+        results = BatchCreator(ads).run(planned, SETTINGS)
+        # A's untagged proxy is refused; the only tagged one is B's, and isn't stolen.
+        self.assertEqual([r.proxy.id if r.proxy else None for r in results], [None, "10"])
+        self.assertEqual(results[0].outcome, Outcome.SKIPPED)
+        self.assertNotIn("99", [c[1] for c in ads.created])
 
     def test_failure_carries_on_and_stop_is_between_profiles(self):
         ads = FakeAds([proxy("10"), proxy("12"), proxy("14")])

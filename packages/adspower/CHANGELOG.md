@@ -10,6 +10,25 @@ version is `0.x`, any release may change how things work.
 
 ## Unreleased
 
+## 0.5.0 (2026-10-09)
+
+### Added
+
+- **Duplicate scanner**: `name_key()` and `NameIndex`. Besides exact
+  names, *similar* names (same apart from case, spaces, `-`, `_`, `.`)
+  are now skipped as `similar name exists`, naming the existing profile
+  (`Planned.existing`, `Planned.note`). `allow_similar=True` /
+  `--allow-similar` restores exact-only matching.
+- `BatchCreator.run` re-checks every name against a fresh list of the
+  account's profiles right before creating, so running a batch twice, or
+  a profile created elsewhere after the plan, never makes a duplicate.
+
+### Changed
+
+- `BatchCreator.run` keeps only proxies that really carry the proxy tag
+  (`Proxy.has_tag`), whatever the plan or the API filter returned.
+- `create-many`'s plan table shows which profile a duplicate clashes with.
+
 ## 0.4.0 (2026-10-09)
 
 ### Added

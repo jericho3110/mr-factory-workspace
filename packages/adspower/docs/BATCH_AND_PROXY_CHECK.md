@@ -66,7 +66,8 @@ adspower check-proxy 1234
 | `--from-file FILE` | also read names from FILE, one per line; blank lines and `#` comments are skipped |
 | `-g/--group`, `-t/--tag` | where they go (both must exist) |
 | `--proxy-tag TAG` | proxies must carry this tag (default: same as `--tag`) |
-| `--remark TEXT` | remark on every new profile |
+| `--remark TEXT` | remark on every new profile (AdsPower's notes field, the *Remark* column in its profile list) |
+| `--allow-similar` | only block exact duplicate names (default: `Shop 8` and `shop-8` count as the same) |
 | `--check` | afterwards, check every new profile's proxy |
 | `-y/--yes` | don't ask; required when there's no terminal to ask in |
 | `--json` | machine-readable output: plan, results, proxy checks |
@@ -82,14 +83,27 @@ so scripts can branch on it.
 | Plan status | When | Created? |
 | --- | --- | --- |
 | `ready` | new name, and a free proxy was reserved for it | yes |
-| `already exists` | a profile with that name exists (ignoring upper/lower case) | no |
-| `repeated` | the name appeared earlier in the list | no (created once) |
+| `already exists: #16 Shop 8` | a profile with that exact name exists anywhere in the account (ignoring upper/lower case); the existing one is named | no |
+| `similar name exists: #16 Shop-8` | the same name apart from case, spaces, `-`, `_`, `.` (`Shop 8` = `shop-8` = `SHOP_8`) | no (pass `allow_similar=True` / `--allow-similar` to allow) |
+| `repeated` | the same (or a similar) name appeared earlier in the list | no (created once) |
 | `name too long` | over 100 characters, AdsPower's limit | no |
 | `no free proxy` | free tagged proxies ran out before this name | no |
 
 - **One unused proxy each.** Free = AdsPower says no profile uses it
   (`Proxy.in_use` is False) **and** this batch hasn't handed it out.
   Proxies are never shared.
+- **Duplicates are checked twice.** Once when planning, and again by
+  `BatchCreator.run` against a *fresh* list of every profile in the
+  account, right before creating. So running the same batch twice (an
+  accidental second "Create"), or a profile made elsewhere after the
+  plan, is skipped as `already exists: ... (created after the plan)`.
+  Names are compared with `name_key()`; `NameIndex` holds the account's
+  names for fast lookups.
+- **Only proxies with the proxy tag.** Proxies have *tags*, not groups,
+  in AdsPower. `run` keeps only proxies that really carry the tag
+  (checked with `Proxy.has_tag`, not trusted from the plan or the API
+  filter). A planned proxy without it is replaced, and never by one
+  reserved for a later name, so it's never used.
 - **Re-checked at creation.** `BatchCreator.run` re-reads the proxy list
   once before it starts. A planned proxy that was used in the meantime
   is swapped for another free one, and never for one reserved for a
@@ -138,7 +152,8 @@ For finer control (a Stop button, your own progress display):
 
 | Name | Kind | Job |
 | --- | --- | --- |
-| `plan(names, existing, free)` | pure function | the plan, no API calls |
+| `plan(names, existing, free, allow_similar=False)` | pure function | the plan, no API calls; `existing` = every profile in the account |
+| `name_key(name)`, `NameIndex(profiles)` | pure function, class | the duplicate rule; `.clash(name)` → `(EXISTS/SIMILAR, profile)` or None |
 | `free_proxies(proxies)` | pure function | the unused ones |
 | `BatchSettings(group, tag, proxy_tag, remark)` | frozen dataclass | where the profiles go |
 | `Batch(settings, planned, free_count)` | frozen dataclass | `.ready`, `.summary()` |
@@ -167,7 +182,7 @@ uses `check_browser` on the browser it already has, rather than
 
 | File | Covers | Stand-in |
 | --- | --- | --- |
-| `tests/test_batch.py` | plan statuses, proxy hand-out, swap-not-steal, failures, stop, `plan_batch` / `create_batch` request bodies | small `FakeAds`; `FakeApi` |
+| `tests/test_batch.py` | plan statuses, similar names, proxy hand-out, swap-not-steal, an untagged proxy never used, the same batch run twice, a profile made after the plan, failures, stop, `plan_batch` / `create_batch` request bodies | small `FakeAds` (it ignores the tag filter on purpose); `FakeApi` |
 | `tests/test_proxycheck.py` | `parse_ip`, `error_code`, ok / error / block page, no-Playwright message, `check_proxy` opens and closes (and leaves an already-open profile open, and closes on a crash) | a fake `fetch`; `FakeApi` |
 | `tests/test_cli.py` | `create-many` (plan shown, asks, `--yes`, `--from-file`, no terminal), `check-proxy` exit codes | `FakeApi`, patched `playwright_fetch` |
 

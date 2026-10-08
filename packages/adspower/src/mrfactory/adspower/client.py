@@ -341,15 +341,18 @@ class AdsPower:
         tag: str | Tag,
         proxy_tag: str | None = None,
         remark: str = "",
+        allow_similar: bool = False,
     ) -> Batch:
         """Plan creating `names` in `group` with `tag`, each with its own
         unused proxy tagged `proxy_tag` (default: the tag's name). Creates
         nothing: look at `batch.planned` / `batch.summary()` first, then
-        `create_batch(batch)`. GroupNotFound / TagNotFound for a typo."""
+        `create_batch(batch)`. GroupNotFound / TagNotFound for a typo.
+        Duplicates are checked against every profile in the account;
+        `allow_similar=True` only blocks exact name matches."""
         group, tag = self.find_group(group), self.find_tag(tag)
-        settings = BatchSettings(group, tag, proxy_tag or tag.name, remark)
+        settings = BatchSettings(group, tag, proxy_tag or tag.name, remark, allow_similar)
         free = free_proxies(self.proxies(tag=settings.proxy_tag))
-        planned = plan(list(names), self.profiles(), free)
+        planned = plan(list(names), self.profiles(), free, allow_similar)
         return Batch(settings, tuple(planned), len(free))
 
     def create_batch(self, batch: Batch, on_result: Callable[[Created], None] | None = None) -> list[Created]:

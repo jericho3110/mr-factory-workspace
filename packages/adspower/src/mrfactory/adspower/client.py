@@ -25,9 +25,11 @@ talk HTTP is `api.py`'s job; what counts as a name match is
 from __future__ import annotations
 
 import time
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from .api import LocalApi
+from .batch import Batch, BatchCreator, BatchSettings, Created, free_proxies, plan
 from .errors import (
     AdsPowerApiError,
     AdsPowerNotRunning,
@@ -40,6 +42,7 @@ from .errors import (
 from .launcher import open_adspower
 from .matching import contains, find_by_name_or_id, looks_like_profile_id, names, serial_order
 from .models import Group, OpenedBrowser, Profile, Proxy, Tag
+from .proxycheck import CHECK_URL, Fetch, ProxyCheck, check_browser
 
 # Endpoints, in one place. v1 = GET with query parameters, v2 = POST with
 # a JSON body. Tag endpoints are undocumented (see api.py).
@@ -64,6 +67,10 @@ NO_PROXY = {"proxy_soft": "no_proxy"}
 # A new profile needs a browser fingerprint. This is AdsPower's default:
 # a Chrome kernel matching the generated user agent.
 DEFAULT_FINGERPRINT = {"browser_kernel_config": {"type": "chrome", "version": "ua_auto"}}
+
+# check_proxy closes the profile it opened and waits until it's really gone.
+CLOSE_TIMEOUT = 15.0
+CLOSE_POLL = 0.5
 
 
 class AdsPower:
@@ -324,3 +331,59 @@ class AdsPower:
             tags=(tag.name,),
             proxy=proxy.url if proxy else "",
         )
+
+    # --- many profiles at once (batch.py) --------------------------------
+
+    def plan_batch(
+        self,
+        names: Sequence[str],
+        group: str | Group,
+        tag: str | Tag,
+        proxy_tag: str | None = None,
+        remark: str = "",
+    ) -> Batch:
+        """Plan creating `names` in `group` with `tag`, each with its own
+        unused proxy tagged `proxy_tag` (default: the tag's name). Creates
+        nothing: look at `batch.planned` / `batch.summary()` first, then
+        `create_batch(batch)`. GroupNotFound / TagNotFound for a typo."""
+        group, tag = self.find_group(group), self.find_tag(tag)
+        settings = BatchSettings(group, tag, proxy_tag or tag.name, remark)
+        free = free_proxies(self.proxies(tag=settings.proxy_tag))
+        planned = plan(list(names), self.profiles(), free)
+        return Batch(settings, tuple(planned), len(free))
+
+    def create_batch(self, batch: Batch, on_result: Callable[[Created], None] | None = None) -> list[Created]:
+        """Create the batch's READY names, one at a time; returns one
+        `Created` per name. `on_result` is called after each one. For a
+        Stop button, use `BatchCreator` directly (it has `stop()`)."""
+        creator = BatchCreator(self, on_result or (lambda created: None))
+        return creator.run(batch.planned, batch.settings)
+
+    # --- proxy health (proxycheck.py) -------------------------------------
+
+    def check_proxy(self, profile: str | Profile, fetch: Fetch | None = None, url: str = CHECK_URL,
+                    close_timeout: float = CLOSE_TIMEOUT) -> ProxyCheck:
+        """Open the profile, load a "what is my IP?" page through its
+        proxy, and close it again (only if this call opened it). Returns
+        a ProxyCheck: `.ok`, `.ip`, `.error`, `.text`. Needs Playwright
+        (`pip install "mrfactory-adspower[browser]"`) unless `fetch` is given."""
+        profile = self._profile(profile)
+        was_open = self.is_profile_open(profile)
+        browser = self.open_profile(profile)
+        try:
+            return check_browser(browser, fetch=fetch, url=url, profile=profile)
+        finally:
+            if not was_open:
+                self.close_profile(profile)
+                self._wait_until_closed(profile, close_timeout)
+
+    def _wait_until_closed(self, profile: Profile, timeout: float) -> bool:
+        """AdsPower answers "closed" before the browser is really gone
+        (about 2 s, seen live in Profile Runner); wait so the next open
+        doesn't overlap. False if it's still open after `timeout`."""
+        deadline = time.monotonic() + timeout
+        while self.is_profile_open(profile):
+            if time.monotonic() >= deadline:
+                return False
+            time.sleep(CLOSE_POLL)
+        return True

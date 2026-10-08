@@ -9,7 +9,9 @@ import dataclasses
 import json
 from collections.abc import Sequence
 
+from ..batch import Batch, Created
 from ..models import Group, Profile, Proxy, Tag
+from ..proxycheck import ProxyCheck
 
 
 def print_groups(groups: Sequence[Group], as_json: bool = False) -> None:
@@ -58,6 +60,24 @@ def print_proxies(proxies: Sequence[Proxy], as_json: bool = False) -> None:
     ]
     print_table(["ID", "TYPE", "ADDRESS", "TAGS", "PROFILES", "REMARK"], rows)
     print(f"\n{count(len(proxies), 'proxy', 'proxies')}")
+
+
+def print_batch_plan(batch: Batch) -> None:
+    s = batch.settings
+    print(f"Group: {s.group.name}   Profile tag: {s.tag.name}   Proxy tag: {s.proxy_tag}"
+          + (f"   Remark: {s.remark}" if s.remark else ""))
+    print_table(["#", "NAME", "PLAN", "PROXY"],
+                [[i + 1, shorten(p.name, 40), p.status.value, p.proxy.address if p.proxy else ""]
+                 for i, p in enumerate(batch.planned)])
+
+
+def print_batch_results(results: Sequence[Created], checks: dict[str, ProxyCheck]) -> None:
+    rows = []
+    for r in results:
+        name, serial, profile_id, proxy, text = r.row()
+        rows.append([shorten(name, 40), serial, profile_id, proxy, text,
+                     checks[r.name].text if r.name in checks else ""])
+    print_table(["NAME", "SERIAL", "ID", "PROXY", "RESULT", "PROXY CHECK"], rows)
 
 
 def print_table(headers: list[str], rows: list[list]) -> None:

@@ -38,6 +38,12 @@ examples:
                                         new profile in group "Acme", tagged "acme", no proxy
   adspower create "Shop 8" -g Acme -t acme --proxy auto
                                         ...equipped with an unused proxy tagged "acme"
+  adspower create-many "Shop 8" "Shop 9" -g Acme -t acme
+                                        plan both, each with its own unused proxy tagged "acme";
+                                        shows the plan and asks before creating
+  adspower create-many --from-file names.txt -g Acme -t acme --check --yes
+                                        names from a file; then check every new proxy
+  adspower check-proxy 1234             open #1234, load a "what is my IP?" page, close it
   adspower groups --json                machine-readable output (any command)
 
 Group, tag, and profile names are matched ignoring upper/lower case.
@@ -171,6 +177,22 @@ def build_parser() -> argparse.ArgumentParser:
                              "or a proxy ID (default: no proxy)")
     create.add_argument("--proxy-tag", metavar="TAG", help="tag the proxy must have (default: same as --tag)")
     create.add_argument("--remark", default="", help="remark for the new profile")
+
+    many = command("create-many", commands.cmd_create_many,
+                   "create several profiles, each with its own unused proxy")
+    many.add_argument("names", nargs="*", help="names of the new profiles")
+    many.add_argument("--from-file", metavar="FILE",
+                      help="also read names from FILE, one per line (# starts a comment)")
+    many.add_argument("-g", "--group", required=True, metavar="GROUP", help="group to put them in (must exist)")
+    many.add_argument("-t", "--tag", required=True, metavar="TAG", help="profile tag to give them (must exist)")
+    many.add_argument("--proxy-tag", metavar="TAG", help="tag the proxies must have (default: same as --tag)")
+    many.add_argument("--remark", default="", help="remark for every new profile")
+    many.add_argument("--check", action="store_true",
+                      help="then open each new profile and check its proxy (needs Playwright)")
+    many.add_argument("-y", "--yes", action="store_true", help="don't ask for confirmation")
+
+    profile_argument(command("check-proxy", commands.cmd_check_proxy,
+                             "check that a profile's proxy works (opens and closes it; needs Playwright)"))
 
     return parser
 

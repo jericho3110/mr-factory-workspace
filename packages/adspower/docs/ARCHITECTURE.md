@@ -38,6 +38,8 @@ server AdsPower runs on `http://127.0.0.1:50325` while it's open:
 - find one profile (serial number, ID, or text) and **open/close** its browser
 - **create** a profile already filed under a group and tag
 - **change the proxy** of an existing profile, only from proxies with the right tag
+- **create many** profiles at once, each with its own unused proxy, and
+  **check a proxy** works ([BATCH_AND_PROXY_CHECK.md](BATCH_AND_PROXY_CHECK.md))
 
 All of it is available two ways: the `adspower` command, and the
 `AdsPower` class in Python. The command is a thin layer over the class.
@@ -59,6 +61,8 @@ src/mrfactory/adspower/
 ├── matching.py    what counts as a name/text match (pure rules)
 ├── errors.py      AdsPowerError and its family
 ├── launcher.py    find AdsPower.exe and start it
+├── batch.py       many profiles at once: plan (pure) + BatchCreator
+├── proxycheck.py  does a profile's proxy work? (Playwright, optional)
 │
 └── cli/           the `adspower` command
     ├── app.py       entry point: parser, run one command, safe exit
@@ -533,6 +537,8 @@ layer below**. A failure points at the layer that's wrong.
 | `test_client.py` | every rule in §7, exact lookup request count, proxy changes | `FakeApi` |
 | `test_cli.py` | help, tables, JSON, picker, confirm, exit codes, Ctrl+C, crash log | `FakeApi` + patched `input`/`is_interactive` |
 | `test_launcher.py` | finding the install, launching | temp folders, mocked `os.startfile` |
+| `test_batch.py` | batch planning and creation rules | small `FakeAds`, `FakeApi` |
+| `test_proxycheck.py` | the proxy check, opening/closing | a fake `fetch`, `FakeApi` |
 
 **A stateful fake.** `FakeApi` doesn't just return canned data; it
 *remembers effects*: which browsers are open, what was created, how
@@ -588,6 +594,7 @@ finding became a test:
 | *Security review:* `--api-url http://<remote>` would send the API key unencrypted | plain http only for loopback | `test_plain_http_only_for_this_machine` |
 | *Security review:* a redirect would carry the `Authorization` header to the new host | `add_unredirected_header` | `test_api_key_is_not_forwarded_on_redirects` |
 | Looking up one serial downloaded ~500 profiles (~3 s) | exact lookup on the server (0.4 s) | `test_serial_number_is_one_request` |
+| Batch create + proxy check end to end (2026-10-09): exit IPs matched the assigned proxies, profiles closed afterwards | none needed; behaviour pinned | `test_create_batch`, `test_opens_checks_and_closes` |
 | Profile tag `acme` vs proxy tag `Acme` | all name matching ignores case | `test_filters_by_tag_ignoring_case_and_by_unused` |
 
 The general lesson: **a fake only behaves the way you thought to make

@@ -13,7 +13,9 @@ names (`from .prompts import is_interactive`), so a test can replace
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 
+from ..batch import Created, summarize
 from ..client import AdsPower
 from ..errors import AdsPowerError, AmbiguousProfile
 from ..models import Profile
@@ -21,6 +23,8 @@ from . import prompts
 from .output import (
     describe_profile,
     describe_proxy,
+    print_batch_plan,
+    print_batch_results,
     print_groups,
     print_json,
     print_profiles,
@@ -159,7 +163,75 @@ def cmd_create(ads: AdsPower, args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_create_many(ads: AdsPower, args: argparse.Namespace) -> int:
+    """Plan, show, confirm, create, then (optionally) check each proxy."""
+    names = read_names(args.names, args.from_file)
+    if not names:
+        raise AdsPowerError("No names given: list them, or use --from-file FILE.")
+    batch = ads.plan_batch(names, group=args.group, tag=args.tag, proxy_tag=args.proxy_tag,
+                           remark=args.remark)
+    if not args.json:
+        print_batch_plan(batch)
+        print(f"\n{batch.summary()}")
+    if not batch.ready:
+        if args.json:
+            print_json({"plan": batch, "results": []})
+        else:
+            print("Nothing to create.")
+        return 1
+    if not args.yes:
+        if not prompts.is_interactive():
+            raise AdsPowerError("Not created: confirm with --yes when not running in a terminal.")
+        if not prompts.confirm(f"Create {len(batch.ready)} profile(s)?"):
+            print("Cancelled. Nothing was created.")
+            return 1
+
+    def progress(result: Created) -> None:
+        if not args.json and result.outcome.value != "skipped":
+            print(f"  {result.name}: {result.message or result.outcome.value}", flush=True)
+
+    results = ads.create_batch(batch, on_result=progress)
+    checks = {}
+    if args.check:
+        for result in results:
+            if result.profile is not None:
+                checks[result.name] = ads.check_proxy(result.profile)
+                if not args.json:
+                    print(f"  proxy of {result.name}: {checks[result.name].text}", flush=True)
+    if args.json:
+        print_json({"plan": batch, "results": results, "proxy_checks": checks})
+    else:
+        print()
+        print_batch_results(results, checks)
+        print(f"\n{summarize(results)}")
+    failed = any(r.outcome.value == "failed" for r in results) or any(not c.ok for c in checks.values())
+    return 1 if failed else 0
+
+
+def cmd_check_proxy(ads: AdsPower, args: argparse.Namespace) -> int:
+    profile = resolve_profile(ads, args)
+    if profile is None:
+        return 1
+    result = ads.check_proxy(profile)
+    if args.json:
+        print_json(result)
+    else:
+        print(f"{describe_profile(profile)}: proxy {result.text}")
+    return 0 if result.ok else 1
+
+
 # --- shared helpers ---------------------------------------------------------
+
+
+def read_names(names: list[str], from_file: str | None) -> list[str]:
+    """Names from the command line, then from the file (one per line;
+    blank lines and lines starting with # are skipped)."""
+    lines = list(names)
+    if from_file:
+        lines += Path(from_file).read_text(encoding="utf-8-sig").splitlines()
+    stripped = (line.strip() for line in lines)
+    return [line for line in stripped if line and not line.startswith("#")]
+
 
 
 def resolve_profile(ads: AdsPower, args: argparse.Namespace) -> Profile | None:

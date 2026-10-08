@@ -10,6 +10,26 @@ version is `0.x`, any release may change how things work.
 
 ## Unreleased
 
+## 0.4.0 (2026-10-09)
+
+### Added
+
+- **Batch creation** (`batch.py`): `AdsPower.plan_batch()` and
+  `create_batch()`, plus the building blocks `plan`, `free_proxies`,
+  `BatchCreator` (with `stop()`), `BatchSettings`, `Batch`, `Created`,
+  `results_text`, `summarize`. Every new profile gets its own unused
+  tagged proxy; existing, repeated and too-long names are skipped;
+  proxies are re-checked at creation time and never shared.
+- **Proxy check** (`proxycheck.py`): `AdsPower.check_proxy()` opens a
+  profile, loads `api.ipify.org` through its proxy, and closes it again
+  (only if it opened it); `check_browser`, `parse_ip`, `error_code`,
+  `ProxyCheck`, `ProxyCheckUnavailable`.
+- Commands `adspower create-many` (plan, confirm, create, `--check`,
+  `--from-file`, `--remark`) and `adspower check-proxy`.
+- Optional extra `[browser]` (Playwright), needed only by the proxy
+  check. The rest of the package stays standard-library only.
+- docs/BATCH_AND_PROXY_CHECK.md.
+
 ### Added
 
 - `adspower --version` and `mrfactory.adspower.__version__`, read from

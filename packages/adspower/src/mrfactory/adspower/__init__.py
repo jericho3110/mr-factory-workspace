@@ -1,10 +1,24 @@
 """Work with the AdsPower desktop app: open it; look up groups, tags,
-profiles, and proxies; open, create, and re-proxy profiles. Start with
-`AdsPower`; see client.py."""
+profiles, and proxies; open, create (one or many), and re-proxy
+profiles; check that a profile's proxy works. Start with `AdsPower`;
+see client.py, batch.py, proxycheck.py."""
 
 from importlib.metadata import PackageNotFoundError, version
 
 from .api import LocalApi
+from .batch import (
+    Batch,
+    BatchCreator,
+    BatchSettings,
+    Created,
+    Outcome,
+    Planned,
+    PlanStatus,
+    free_proxies,
+    plan,
+    results_text,
+    summarize,
+)
 from .client import AdsPower
 from .errors import (
     AdsPowerApiError,
@@ -20,6 +34,7 @@ from .errors import (
 )
 from .launcher import adspower_candidates, find_adspower, open_adspower, open_app
 from .models import Group, OpenedBrowser, Profile, Proxy, Tag
+from .proxycheck import CHECK_URL, ProxyCheck, ProxyCheckUnavailable, check_browser, error_code, parse_ip
 
 # The version is written in exactly one place, pyproject.toml. pip copies
 # it into the installed metadata, and this reads it back from there, so
@@ -52,4 +67,23 @@ __all__ = [
     "find_adspower",
     "open_adspower",
     "open_app",
+    # many profiles at once (batch.py)
+    "Batch",
+    "BatchCreator",
+    "BatchSettings",
+    "Created",
+    "Outcome",
+    "Planned",
+    "PlanStatus",
+    "free_proxies",
+    "plan",
+    "results_text",
+    "summarize",
+    # proxy health (proxycheck.py)
+    "CHECK_URL",
+    "ProxyCheck",
+    "ProxyCheckUnavailable",
+    "check_browser",
+    "error_code",
+    "parse_ip",
 ]

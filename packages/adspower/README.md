@@ -44,6 +44,8 @@ adspower --version                  # the installed version
 | `adspower proxies [-t TAG] [--unused]` | List proxies, optionally only those with a tag and/or not used by any profile |
 | `adspower set-proxy PROFILE [-g GROUP] (--proxy auto\|ID \| --no-proxy) [--proxy-tag TAG] [--yes]` | Change an existing profile's proxy, only to one carrying the profile's tag. Shows current → new and asks first |
 | `adspower create NAME -g GROUP -t TAG [--proxy auto\|ID] [--proxy-tag TAG] [--remark TEXT]` | Create a profile in a group, with a tag, optionally with a proxy |
+| `adspower create-many NAME... [--from-file FILE] -g GROUP -t TAG [--proxy-tag TAG] [--remark TEXT] [--check] [--yes]` | Create several profiles, **each with its own unused proxy**. Shows the plan and asks first; `--check` then tests every new proxy |
+| `adspower check-proxy PROFILE [-g GROUP]` | Open the profile, load a "what is my IP?" page through its proxy, close it. Exit 0 = works. Needs Playwright (below) |
 
 `PROFILE` is a serial number, a profile ID, or part of its name or
 remark. If several profiles match, you get a numbered list to pick from
@@ -126,6 +128,25 @@ family (`GroupNotFound`, `TagNotFound`, `ProfileNotFound`,
 `ProxyNotFound`). `open()` raises `FileNotFoundError` if AdsPower isn't
 installed where expected.
 
+### Many profiles, and proxy checks
+
+```python
+from mrfactory.adspower import AdsPower, results_text
+
+ads = AdsPower()
+batch = ads.plan_batch(["Shop 8", "Shop 9"], group="Acme", tag="acme")   # creates nothing
+print(batch.summary())                       # 2 of 2 ready; 14 free proxies tagged 'acme'.
+results = ads.create_batch(batch)            # one at a time, one unused proxy each
+print(results_text(results))                 # pastes into a spreadsheet
+ads.check_proxy(results[0].profile).text     # 'ok (198.51.100.7)' or 'failed: ERR_...'
+```
+
+The proxy check needs Playwright, the package's only optional
+dependency: `pip install -e "packages/adspower[browser]"` (or
+`pip install "mrfactory-adspower[browser]"`). Rules, building blocks
+(`BatchCreator` with `stop()`, `check_browser`, ...), and design:
+**[docs/BATCH_AND_PROXY_CHECK.md](docs/BATCH_AND_PROXY_CHECK.md)**.
+
 ## Good to know
 
 - **Opened profiles stay open.** The browser is started by the AdsPower
@@ -164,6 +185,7 @@ its icon on screen, so this package doesn't use `mrfactory.mouse_ext`.
 ```text
 CHANGELOG.md           what changed in each version
 docs/ARCHITECTURE.md   module map, one command end to end, concepts, testing, recipe
+docs/BATCH_AND_PROXY_CHECK.md   many profiles at once; checking proxies
 src/mrfactory/adspower/
   __init__.py     public API
   __main__.py     `python -m mrfactory.adspower`
@@ -173,6 +195,8 @@ src/mrfactory/adspower/
   matching.py     name/text matching rules (pure functions)
   errors.py       AdsPowerError and subclasses
   launcher.py     find_adspower, open_adspower, open_app
+  batch.py        plan (pure), BatchCreator: many profiles, one unused proxy each
+  proxycheck.py   check_browser, parse_ip, playwright_fetch: does a proxy work?
   cli/            the `adspower` command
     app.py          parser, entry point, safe exit
     commands.py     one cmd_* per subcommand

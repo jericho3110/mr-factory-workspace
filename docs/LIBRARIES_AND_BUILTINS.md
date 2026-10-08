@@ -136,7 +136,7 @@ checkers still understand the hint.
 
 | Module | Where | What for | Why this one |
 | --- | --- | --- | --- |
-| `ipaddress` | `adspower/api.py` `_is_loopback` | is the API host `127.x` / `::1`? | parses IPv4 and IPv6 correctly; string checks like `startswith("127.")` miss `::1` |
+| `ipaddress` | `adspower/api.py` `_is_loopback`; `adspower/proxycheck.py` `parse_ip` | is the API host `127.x` / `::1`?; is the proxy check's answer a real IP? | parses IPv4 and IPv6 correctly; string checks like `startswith("127.")` miss `::1`, and a regex for IPv6 is easy to get wrong |
 | `subprocess` | `gitship/runner.py` | run `git`, `gh` and checks | argument lists, no shell (no command injection) |
 | `shutil.which` | `gitship/runner.py` | find `gh.exe` / `git.exe` on PATH | Windows needs the extension resolved |
 | `hashlib` | `gitship/release.py` | SHA-256 of release assets | standard, fast, reads in 1 MB blocks |
@@ -307,6 +307,23 @@ coordinates of the `True` cells: all matches, for `locate_all`.
 **Why:** OpenCV needs it anyway, and whole-array operations are far
 faster than Python loops over pixels.
 
+### `playwright` (optional extra `[browser]`), version ≥ 1.40
+
+- **Where:** `adspower/proxycheck.py` `playwright_fetch`, imported *inside*
+  the function, so the package imports fine without it.
+- **What for:** the proxy check attaches to the profile's already-open
+  browser (`connect_over_cdp`) and loads one page through its proxy.
+- **Why:** the browser is what actually uses the proxy, and the library
+  never keeps proxy passwords. Playwright is maintained by Microsoft and
+  ships its own driver.
+- **Why optional:** everything else is standard library; an *extra*
+  (`pip install "mrfactory-adspower[browser]"`) keeps it that way for
+  users who never check proxies. Without it, a clear
+  `ProxyCheckUnavailable` names the install command.
+- **Alternatives:** Selenium (needs the matching chromedriver), a
+  hand-written DevTools-protocol client over websockets (no standard
+  library websocket client; much more code).
+
 ### Build and development tools (not imported by the code)
 
 | Tool | Role | Why |
@@ -324,7 +341,7 @@ faster than Python loops over pixels.
 | `click` / `typer` | decorator-based CLIs | `argparse` is built in and covers every need so far |
 | `pytest` | less boilerplate, better failure output | `unittest` needs no install; easy switch later |
 | `pydantic` | validated models from JSON | `@dataclass` + `from_api` is enough for a few models |
-| `selenium` / `playwright` | controlling the browser inside a profile | not needed yet; `OpenedBrowser` keeps the addresses they'd attach to |
+| `selenium` | controlling the browser inside a profile | not needed; Playwright (below, optional) covers the one use |
 
 ---
 

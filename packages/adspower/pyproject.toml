@@ -4,10 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mrfactory-adspower"
-version = "0.3.0"
-description = "Open AdsPower; look up groups, tags, profiles, and proxies; open, create, and re-proxy profiles."
+version = "0.4.0"
+description = "Open AdsPower; look up groups, tags, profiles, and proxies; open, create (one or many), and re-proxy profiles; check proxies."
 requires-python = ">=3.10"
 dependencies = []
+
+[project.optional-dependencies]
+# Only the proxy check needs it (proxycheck.py): pip install "mrfactory-adspower[browser]"
+browser = ["playwright>=1.40"]
 
 [project.scripts]
 adspower = "mrfactory.adspower.cli:main"

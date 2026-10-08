@@ -267,5 +267,63 @@ class TestSafeExit(unittest.TestCase):
         self.assertIn("Opened C:/AdsPower.exe", out)
 
 
+class TestCreateMany(unittest.TestCase):
+    def test_shows_the_plan_and_asks_first(self):
+        api = FakeApi()
+        code, out, _ = run("create-many", "New A", "John Shop", "-g", "Acme", "-t", "acme",
+                           api=api, interactive=True, answers=["n"])
+        self.assertEqual(code, 1)
+        self.assertIn("ready", out)
+        self.assertIn("already exists", out)
+        self.assertIn("1 of 2 ready; 1 free proxy tagged 'acme'.", out)
+        self.assertIn("Nothing was created", out)
+        self.assertEqual(api.created, [])
+
+    def test_yes_creates_and_prints_the_table(self):
+        api = FakeApi()
+        code, out, _ = run("create-many", "New A", "-g", "Acme", "-t", "acme", "--remark", "b1", "--yes", api=api)
+        self.assertEqual(code, 0)
+        self.assertEqual(api.created[0]["proxyid"], "p2")
+        self.assertEqual(api.created[0]["remark"], "b1")
+        self.assertIn("1 created", out)
+
+    def test_names_from_a_file_skip_comments(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            names = Path(tmp) / "names.txt"
+            names.write_text("# new ones\nNew A\n\n", encoding="utf-8")
+            api = FakeApi()
+            code, _, _ = run("create-many", "--from-file", str(names), "-g", "Acme", "-t", "acme", "--yes", api=api)
+        self.assertEqual(code, 0)
+        self.assertEqual([b["name"] for b in api.created], ["New A"])
+
+    def test_refuses_without_terminal_or_yes(self):
+        api = FakeApi()
+        code, _, err = run("create-many", "New A", "-g", "Acme", "-t", "acme", api=api)
+        self.assertEqual(code, 1)
+        self.assertIn("--yes", err)
+        self.assertEqual(api.created, [])
+
+    def test_no_names(self):
+        code, _, err = run("create-many", "-g", "Acme", "-t", "acme", "--yes")
+        self.assertEqual(code, 1)
+        self.assertIn("No names given", err)
+
+
+class TestCheckProxy(unittest.TestCase):
+    def test_ok_and_failed_exit_codes(self):
+        ok = mock.patch("mrfactory.adspower.proxycheck.playwright_fetch", return_value='{"ip":"198.51.100.7"}')
+        with ok:
+            code, out, _ = run("check-proxy", "10")
+        self.assertEqual(code, 0)
+        self.assertIn("proxy ok (198.51.100.7)", out)
+
+        bad = mock.patch("mrfactory.adspower.proxycheck.playwright_fetch",
+                         side_effect=RuntimeError("net::ERR_PROXY_CONNECTION_FAILED"))
+        with bad:
+            code, out, _ = run("check-proxy", "10")
+        self.assertEqual(code, 1)
+        self.assertIn("failed: ERR_PROXY_CONNECTION_FAILED", out)
+
+
 if __name__ == "__main__":
     unittest.main()

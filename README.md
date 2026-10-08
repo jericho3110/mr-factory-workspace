@@ -10,6 +10,7 @@ lives in its own folder under `packages/`, and installs into the shared
 | --- | --- | --- |
 | [`packages/mouse-ext`](packages/mouse-ext/) | `mrfactory.mouse_ext` | Plugins and extensions for [natural_mouse](https://github.com/jericho3110/natural-mouse), the human-like mouse mover |
 | [`packages/adspower`](packages/adspower/) | `mrfactory.adspower` | Opens AdsPower; finds groups, tags, profiles, and proxies; opens, creates, and re-proxies profiles (`adspower --help`) |
+| [`packages/gitship`](packages/gitship/) | `mrfactory.gitship` | Checks, scans, commits, pushes, publishes (private by default) and releases a git repo safely (`gitship --help`) |
 
 > **Note:** `mouse-ext` builds on `natural_mouse`, which lives in a
 > separate, **private** repository, so `mouse-ext` can be read and
@@ -62,6 +63,7 @@ python scripts/test_all.py adspower     # ...or just one
 | [docs/LIBRARIES_AND_BUILTINS.md](docs/LIBRARIES_AND_BUILTINS.md) | every standard-library module, built-in, dunder method, decorator, and external library used: where, and why |
 | [docs/MODULES_AND_PACKAGES.md](docs/MODULES_AND_PACKAGES.md) | modules vs packages, how `import` works, distributions, versions, dependencies |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | the *why* of the workspace: principles, `pyproject.toml`, `src/` layout, every command, testing, linting |
+| [docs/GITHUB_WORKFLOW.md](docs/GITHUB_WORKFLOW.md) | commit, push, publish a repo, make a release: every step, why, and the commands (automated by `gitship`) |
 | [docs/CONVENTIONS.md](docs/CONVENTIONS.md) | the rules: layout, naming, namespace package, dependencies, commits |
 | `packages/<name>/README.md` | how to use each package |
 | `packages/<name>/docs/ARCHITECTURE.md` | how each package is designed, and why |

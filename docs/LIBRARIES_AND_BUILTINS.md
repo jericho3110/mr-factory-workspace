@@ -132,6 +132,18 @@ checkers still understand the hint.
 
 ---
 
+### Added with `gitship` and the adspower security fix (2026-10-08)
+
+| Module | Where | What for | Why this one |
+| --- | --- | --- | --- |
+| `ipaddress` | `adspower/api.py` `_is_loopback` | is the API host `127.x` / `::1`? | parses IPv4 and IPv6 correctly; string checks like `startswith("127.")` miss `::1` |
+| `subprocess` | `gitship/runner.py` | run `git`, `gh` and checks | argument lists, no shell (no command injection) |
+| `shutil.which` | `gitship/runner.py` | find `gh.exe` / `git.exe` on PATH | Windows needs the extension resolved |
+| `hashlib` | `gitship/release.py` | SHA-256 of release assets | standard, fast, reads in 1 MB blocks |
+| `fnmatch` | `gitship/scan.py` | `*.pem`, `__pycache__/*` patterns | shell-style patterns without touching the disk |
+| `json` | `gitship/config.py` | `.gitship.json` | `tomllib` needs Python 3.11; the workspace supports 3.10 |
+| `tempfile` | `gitship/workflow.py`, `release.py`, tests | commit-message file, SHA256SUMS, throwaway repos | unique names, cleaned up automatically |
+| `urllib.request` | `gitship/release.py` | anonymous re-download of public release assets | proves strangers get the same bytes; only `https://github.com/` URLs |
 ## 3. Built-in functions
 
 Always available, no import. The ones this code uses, with a real line:

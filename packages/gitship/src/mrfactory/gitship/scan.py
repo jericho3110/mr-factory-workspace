@@ -29,6 +29,9 @@ _SECRETS = [(name, re.compile(rx)) for name, rx in SECRET_PATTERNS.items()]
 # File names that are secrets or local data by nature, whatever they contain.
 FORBIDDEN_NAMES = [".env", ".env.*", "*.pem", "*.key", "*.pfx", "*.p12", "id_rsa", "id_ed25519",
                    "credentials.json", "*.kdbx", "Cookies", "Login Data"]
+# Templates that list variable NAMES only; committing them is the convention.
+# Their contents are still scanned for secrets like any other file.
+TEMPLATES = [".env.example", ".env.sample", ".env.template"]
 # Build output and caches: regenerated, so they don't belong in git.
 GENERATED = ["*.exe", "*.dll", "*.pyc", "*.pyo", "*.obj", "*.o", "*.pdb", "*.so", "*.dylib",
              "__pycache__/*", "*/__pycache__/*", "node_modules/*", "*/node_modules/*"]
@@ -67,7 +70,7 @@ def scan_file(path: str, size: int, text: str | None,
     if _matches(path, allow):
         return []
     found = []
-    if _matches(path, FORBIDDEN_NAMES):
+    if _matches(path, FORBIDDEN_NAMES) and not _matches(path, TEMPLATES):
         found.append(Finding(path, "secret or private-data file name; add it to .gitignore"))
     if _matches(path, GENERATED):
         found.append(Finding(path, "build output / cache; add it to .gitignore"))

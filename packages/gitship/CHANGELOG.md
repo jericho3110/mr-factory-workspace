@@ -4,6 +4,13 @@ What changed in each version of `mrfactory-gitship`, newest first.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions: [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- `.env.example` (and `.env.sample` / `.env.template`) can be committed: they list
+  variable names only. Their contents are still scanned for secrets.
+
 ## [0.1.0] - 2026-10-08
 
 ### Added

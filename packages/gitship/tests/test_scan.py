@@ -36,6 +36,12 @@ class FileNameTests(unittest.TestCase):
         self.assertIn("build output", reasons("dist/app.exe", None))
         self.assertIn("build output", reasons("pkg/__pycache__/m.cpython-314.pyc", None))
 
+    def test_env_templates_are_allowed_but_still_scanned(self):
+        self.assertEqual(reasons(".env.example", "ANTHROPIC_API_KEY=\n"), "")
+        self.assertIn("secret", reasons(".env.local", "X=1"))
+        leaked = "ANTHROPIC_API_KEY=" + "sk-" + "ant-" + "b" * 30
+        self.assertIn("looks like", reasons(".env.example", leaked))
+
     def test_large_file(self):
         self.assertIn("large file", reasons("video.mp4", None, size=50 * 1024 * 1024))
 

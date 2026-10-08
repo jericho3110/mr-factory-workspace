@@ -13,6 +13,7 @@ are used by AdsPower's own MCP server, github.com/AdsPower/local-api-mcp-typescr
 
 from __future__ import annotations
 
+import ipaddress
 import json
 import os
 import time
@@ -59,8 +60,14 @@ class LocalApi:
         needed if API security verification is turned on in AdsPower.
         `opener` is swappable so tests never make real requests."""
         self.base_url = (base_url or os.environ.get("ADSPOWER_API_URL") or DEFAULT_API_URL).rstrip("/")
-        if urllib.parse.urlsplit(self.base_url).scheme not in ALLOWED_SCHEMES:
+        parts = urllib.parse.urlsplit(self.base_url)
+        if parts.scheme not in ALLOWED_SCHEMES:
             raise ConfigError(f"API URL must start with http:// or https://, got {self.base_url!r}.")
+        if parts.scheme == "http" and not _is_loopback(parts.hostname or ""):
+            # Plain HTTP is readable by anyone on the network path. That's fine for
+            # 127.0.0.1 (the request never leaves this PC), not for a remote host.
+            raise ConfigError(f"plain http:// is only allowed for this machine (127.0.0.1 / localhost), got "
+                              f"{self.base_url!r}. Use https:// so the API key isn't sent unencrypted.")
         self.api_key = api_key or os.environ.get("ADSPOWER_API_KEY")
         self.timeout = timeout
         self.min_interval = min_interval
@@ -126,7 +133,9 @@ class LocalApi:
             request = urllib.request.Request(url, data=json.dumps(body).encode(), method="POST")  # noqa: S310
             request.add_header("Content-Type", "application/json")
         if self.api_key:
-            request.add_header("Authorization", f"Bearer {self.api_key}")
+            # "Unredirected": if a server answers with a redirect, urllib follows it,
+            # and ordinary headers go along to the new address. This one stays behind.
+            request.add_unredirected_header("Authorization", f"Bearer {self.api_key}")
 
         self._wait_for_rate_limit()
         try:
@@ -150,6 +159,16 @@ class LocalApi:
         if wait > 0:
             time.sleep(wait)
         self._last_request = time.monotonic()
+
+
+def _is_loopback(host: str) -> bool:
+    """True for addresses that never leave this machine: localhost, 127.x.x.x, ::1."""
+    if host.lower() == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:  # a host name like api.example.com
+        return False
 
 
 def _is_rate_limited(body: dict) -> bool:

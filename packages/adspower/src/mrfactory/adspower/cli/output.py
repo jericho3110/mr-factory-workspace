@@ -79,7 +79,7 @@ def print_json(value) -> None:
 
 
 def describe_profile(profile: Profile) -> str:
-    """One line: #12 "Shop 7" (Jericho, ID k1abc)."""
+    """One line: #12 "Shop 7" (Acme, ID k1abc)."""
     return f'#{profile.serial_number} "{clean(profile.name)}" ({profile.group_name}, ID {profile.id})'
 
 

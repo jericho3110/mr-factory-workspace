@@ -185,8 +185,8 @@ Defining them makes your objects work with built-in syntax.
 
 | Dunder | Gives you |
 | --- | --- |
-| `__init__` | `Group(id="1", name="Jericho")` |
-| `__repr__` | readable printing: `Group(id='1', name='Jericho', remark='')` |
+| `__init__` | `Group(id="1", name="Acme")` |
+| `__repr__` | readable printing: `Group(id='1', name='Acme', remark='')` |
 | `__eq__` | `==` compares field values, so tests can `assertEqual(group, Group(...))` |
 | `__hash__` (with `frozen=True`) | frozen dataclasses can go in sets and be dict keys |
 | `__setattr__` blocked (with `frozen=True`) | `profile.name = "x"` raises `FrozenInstanceError`: immutable |
@@ -227,7 +227,7 @@ follows it.
 
 | Feature | Real example | Notes |
 | --- | --- | --- |
-| f-strings with `!r` | `f"No group named {name_or_id!r}"` | `!r` uses `repr()`: shows `'Jerico'` with quotes, so empty or space-only input is visible |
+| f-strings with `!r` | `f"No group named {name_or_id!r}"` | `!r` uses `repr()`: shows `'Acmee'` with quotes, so empty or space-only input is visible |
 | generator expressions | `any(text in f.casefold() for f in fields)` | like a list comprehension in `()`, but lazy: items are made one at a time |
 | generator functions (`yield`) | `_GuardedPath.__iter__`, `_match_each_scale` | a function that pauses at each `yield`; how the fail-safe runs between mouse steps |
 | comprehensions | `[g for g in groups if contains(g.name, name)]` | build lists/dicts/sets in one readable line |

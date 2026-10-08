@@ -132,7 +132,7 @@ class Proxy:
         return self.profile_count > 0
 
     def has_tag(self, name: str) -> bool:
-        """Tag names are compared ignoring case ("jericho" == "Jericho")."""
+        """Tag names are compared ignoring case ("acme" == "Acme")."""
         return any(same_name(tag, name) for tag in self.tags)
 
 

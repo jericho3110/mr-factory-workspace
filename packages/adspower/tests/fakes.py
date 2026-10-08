@@ -11,19 +11,19 @@ GROUPS = [
     {"group_id": "0", "group_name": "Ungrouped", "remark": ""},
     {"group_id": "101", "group_name": "Shopify", "remark": "stores"},
     {"group_id": "102", "group_name": "Socials", "remark": None},
-    {"group_id": "103", "group_name": "Jericho", "remark": ""},
+    {"group_id": "103", "group_name": "Acme", "remark": ""},
 ]
 
 TAGS = [
-    {"id": "900", "name": "jericho", "color": "blue"},
+    {"id": "900", "name": "acme", "color": "blue"},
     {"id": "901", "name": "Sales", "color": "yellow"},
 ]
 
 PROFILES = [
     {"profile_id": "k1a", "profile_no": "10", "name": "John Shop", "group_id": "101",
      "group_name": "Shopify", "remark": "main store", "last_open_time": "1700000000",
-     "profile_tags": [{"id": "900", "name": "jericho", "color": "blue"}],
-     "user_proxy_config": {"proxy_soft": "other", "proxy_type": "http", "proxy_host": "1.1.1.1",
+     "profile_tags": [{"id": "900", "name": "acme", "color": "blue"}],
+     "user_proxy_config": {"proxy_soft": "other", "proxy_type": "http", "proxy_host": "203.0.113.11",
                            "proxy_port": "8000", "proxy_user": "u", "proxy_password": "secret"}},
     {"profile_id": "k1b", "profile_no": "2", "name": "Jane Shop", "group_id": "101",
      "group_name": "Shopify", "remark": "", "last_open_time": "0", "profile_tags": [],
@@ -34,13 +34,13 @@ PROFILES = [
 ]
 
 PROXIES = [
-    {"proxy_id": "p1", "type": "http", "host": "1.1.1.1", "port": "8000", "user": "u", "password": "secret",
+    {"proxy_id": "p1", "type": "http", "host": "203.0.113.11", "port": "8000", "user": "u", "password": "secret",
      "remark": "", "profile_count": "2", "related_profile_no": ["10", "99"],
-     "proxy_tags": [{"id": "1", "name": "Jericho", "color": "red"}]},
-    {"proxy_id": "p2", "type": "socks5", "host": "2.2.2.2", "port": "9000", "user": "u", "password": "secret",
+     "proxy_tags": [{"id": "1", "name": "Acme", "color": "red"}]},
+    {"proxy_id": "p2", "type": "socks5", "host": "203.0.113.22", "port": "9000", "user": "u", "password": "secret",
      "remark": "spare", "profile_count": "0", "related_profile_no": [],
-     "proxy_tags": [{"id": "1", "name": "Jericho", "color": "red"}]},
-    {"proxy_id": "p3", "type": "http", "host": "3.3.3.3", "port": "8000", "user": "", "password": "",
+     "proxy_tags": [{"id": "1", "name": "Acme", "color": "red"}]},
+    {"proxy_id": "p3", "type": "http", "host": "203.0.113.33", "port": "8000", "user": "", "password": "",
      "remark": "", "profile_count": "0", "proxy_tags": [{"id": "2", "name": "Support", "color": "red"}]},
 ]
 

@@ -21,12 +21,12 @@ class TestGroups(unittest.TestCase):
 
     def test_lists_every_group(self):
         groups = self.ads.groups()
-        self.assertEqual([g.name for g in groups], ["Ungrouped", "Shopify", "Socials", "Jericho"])
+        self.assertEqual([g.name for g in groups], ["Ungrouped", "Shopify", "Socials", "Acme"])
         self.assertEqual(groups[1], Group(id="101", name="Shopify", remark="stores"))
         self.assertEqual(groups[2].remark, "")  # null in the API becomes ""
 
     def test_filters_groups_by_part_of_the_name(self):
-        self.assertEqual([g.name for g in self.ads.groups(name="JER")], ["Jericho"])
+        self.assertEqual([g.name for g in self.ads.groups(name="ACM")], ["Acme"])
         self.assertEqual([g.name for g in self.ads.groups(name="s")], ["Shopify", "Socials"])
 
     def test_finds_group_by_name_ignoring_case_or_by_id(self):
@@ -44,16 +44,16 @@ class TestTags(unittest.TestCase):
         self.ads = AdsPower(FakeApi())
 
     def test_lists_and_filters_tags(self):
-        self.assertEqual([t.name for t in self.ads.tags()], ["jericho", "Sales"])
+        self.assertEqual([t.name for t in self.ads.tags()], ["acme", "Sales"])
         self.assertEqual([t.name for t in self.ads.tags(name="SAL")], ["Sales"])
 
     def test_finds_tag_ignoring_case(self):
-        self.assertEqual(self.ads.find_tag("Jericho").id, "900")
+        self.assertEqual(self.ads.find_tag("Acme").id, "900")
 
     def test_unknown_tag_is_an_error_not_a_new_tag(self):
         with self.assertRaises(TagNotFound) as caught:
-            self.ads.find_tag("Jerico")
-        self.assertIn("jericho", str(caught.exception))
+            self.ads.find_tag("Acmee")
+        self.assertIn("acme", str(caught.exception))
 
 
 class TestProfiles(unittest.TestCase):
@@ -194,8 +194,8 @@ class TestProxies(unittest.TestCase):
         self.ads = AdsPower(FakeApi())
 
     def test_filters_by_tag_ignoring_case_and_by_unused(self):
-        self.assertEqual([p.id for p in self.ads.proxies(tag="jericho")], ["p1", "p2"])
-        self.assertEqual([p.id for p in self.ads.proxies(tag="Jericho", unused=True)], ["p2"])
+        self.assertEqual([p.id for p in self.ads.proxies(tag="acme")], ["p1", "p2"])
+        self.assertEqual([p.id for p in self.ads.proxies(tag="Acme", unused=True)], ["p2"])
         self.assertEqual(len(self.ads.proxies()), 3)
 
     def test_password_is_never_kept(self):
@@ -204,20 +204,20 @@ class TestProxies(unittest.TestCase):
         self.assertNotIn("secret", repr(proxy))
 
     def test_choose_picks_an_unused_tagged_proxy(self):
-        self.assertEqual(self.ads.choose_proxy(tag="Jericho").id, "p2")
+        self.assertEqual(self.ads.choose_proxy(tag="Acme").id, "p2")
 
     def test_choose_by_id_must_have_the_tag(self):
-        self.assertEqual(self.ads.choose_proxy(tag="Jericho", proxy_id="p1").id, "p1")  # in use is fine when named
+        self.assertEqual(self.ads.choose_proxy(tag="Acme", proxy_id="p1").id, "p1")  # in use is fine when named
         with self.assertRaises(ProxyNotFound):
-            self.ads.choose_proxy(tag="Jericho", proxy_id="p3")  # tagged Support
+            self.ads.choose_proxy(tag="Acme", proxy_id="p3")  # tagged Support
 
     def test_choose_fails_when_every_tagged_proxy_is_in_use(self):
         api = FakeApi()
         api.post_all = lambda path, limit, **body: [
-            {"proxy_id": "x", "profile_count": "1", "proxy_tags": [{"name": "Jericho"}]}
+            {"proxy_id": "x", "profile_count": "1", "proxy_tags": [{"name": "Acme"}]}
         ]
         with self.assertRaisesRegex(ProxyNotFound, "all in use"):
-            AdsPower(api).choose_proxy(tag="Jericho")
+            AdsPower(api).choose_proxy(tag="Acme")
 
 
 class TestChangeProxy(unittest.TestCase):
@@ -227,7 +227,7 @@ class TestChangeProxy(unittest.TestCase):
 
     def test_profile_shows_its_proxy_without_the_password(self):
         profile = self.ads.find_profile("10")
-        self.assertEqual(profile.proxy, "http://1.1.1.1:8000")
+        self.assertEqual(profile.proxy, "http://203.0.113.11:8000")
         self.assertNotIn("secret", repr(profile))
         self.assertEqual(self.ads.find_profile("2").proxy, "")  # no_proxy
 
@@ -236,9 +236,9 @@ class TestChangeProxy(unittest.TestCase):
         self.assertIsNone(self.ads.current_proxy("2"))
 
     def test_set_proxy_equips_a_chosen_proxy(self):
-        self.ads.set_proxy("2", self.ads.choose_proxy(tag="Jericho"))
+        self.ads.set_proxy("2", self.ads.choose_proxy(tag="Acme"))
         self.assertEqual(self.api.updates, [{"profile_id": "k1b", "proxyid": "p2"}])
-        self.assertEqual(self.ads.find_profile("2").proxy, "socks5://2.2.2.2:9000")
+        self.assertEqual(self.ads.find_profile("2").proxy, "socks5://203.0.113.22:9000")
 
     def test_set_proxy_none_removes_it(self):
         self.ads.set_proxy("10", None)
@@ -252,27 +252,27 @@ class TestCreateProfile(unittest.TestCase):
         self.ads = AdsPower(self.api)
 
     def test_creates_in_group_with_tag_and_no_proxy(self):
-        profile = self.ads.create_profile("Shop 8", group="jericho", tag="JERICHO")
+        profile = self.ads.create_profile("Shop 8", group="acme", tag="ACME")
         body = self.api.created[0]
         self.assertEqual(body["group_id"], "103")
         self.assertEqual(body["profile_tag_ids"], ["900"])
         self.assertEqual(body["user_proxy_config"], {"proxy_soft": "no_proxy"})
         self.assertNotIn("proxyid", body)
         self.assertEqual((profile.id, profile.serial_number, profile.group_name, profile.tags),
-                         ("new1", "500", "Jericho", ("jericho",)))
+                         ("new1", "500", "Acme", ("acme",)))
 
     def test_creates_with_a_chosen_proxy(self):
-        proxy = self.ads.choose_proxy(tag="Jericho")
-        self.ads.create_profile("Shop 8", group="Jericho", tag="jericho", proxy=proxy)
+        proxy = self.ads.choose_proxy(tag="Acme")
+        self.ads.create_profile("Shop 8", group="Acme", tag="acme", proxy=proxy)
         body = self.api.created[0]
         self.assertEqual(body["proxyid"], "p2")
         self.assertNotIn("user_proxy_config", body)
 
     def test_missing_group_or_tag_creates_nothing(self):
         with self.assertRaises(GroupNotFound):
-            self.ads.create_profile("x", group="Nope", tag="jericho")
+            self.ads.create_profile("x", group="Nope", tag="acme")
         with self.assertRaises(TagNotFound):
-            self.ads.create_profile("x", group="Jericho", tag="Nope")
+            self.ads.create_profile("x", group="Acme", tag="Nope")
         self.assertEqual(self.api.created, [])
 
 

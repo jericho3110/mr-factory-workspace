@@ -4,14 +4,14 @@
 
     ads = AdsPower()
     ads.open(wait=60)                                # start the app, wait for its API
-    ads.groups(name="jer")                           # groups whose name contains "jer"
-    ads.profiles(group="Jericho", tag="jericho")     # by group and/or tag
-    profile = ads.find_profile("shop 7", group="Jericho")
+    ads.groups(name="acm")                           # groups whose name contains "acm"
+    ads.profiles(group="Acme", tag="acme")     # by group and/or tag
+    profile = ads.find_profile("shop 7", group="Acme")
     ads.open_profile(profile)                        # stays open after Python exits
 
-    proxy = ads.choose_proxy(tag="Jericho")          # an unused proxy tagged Jericho
-    ads.create_profile("Shop 8", group="Jericho", tag="jericho", proxy=proxy)
-    ads.set_proxy(profile, ads.choose_proxy(tag="Jericho"))
+    proxy = ads.choose_proxy(tag="Acme")          # an unused proxy tagged Acme
+    ads.create_profile("Shop 8", group="Acme", tag="acme", proxy=proxy)
+    ads.set_proxy(profile, ads.choose_proxy(tag="Acme"))
 
 Every `group`, `tag`, and `profile` argument accepts either the object
 (`Group`, `Tag`, `Profile`) or its name/ID as a string.

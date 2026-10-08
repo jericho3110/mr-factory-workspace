@@ -14,7 +14,7 @@ def ok(data=None):
 
 def make_api(*responses, **kwargs):
     opener = FakeOpener(*responses)
-    api = LocalApi(base_url="http://api.test", min_interval=0, retry_delay=0, opener=opener, **kwargs)
+    api = LocalApi(base_url="http://127.0.0.1:50325", min_interval=0, retry_delay=0, opener=opener, **kwargs)
     return api, opener
 
 
@@ -29,6 +29,21 @@ class TestLocalApi(unittest.TestCase):
         api, opener = make_api(ok(), api_key="secret")
         api.get("/thing")
         self.assertEqual(opener.requests[0].get_header("Authorization"), "Bearer secret")
+
+    def test_api_key_is_not_forwarded_on_redirects(self):
+        # urllib copies `headers` to a redirect's new request, but not `unredirected_hdrs`.
+        api, opener = make_api(ok(), api_key="secret")
+        api.get("/thing")
+        request = opener.requests[0]
+        self.assertNotIn("Authorization", request.headers)
+        self.assertEqual(request.unredirected_hdrs.get("Authorization"), "Bearer secret")
+
+    def test_plain_http_only_for_this_machine(self):
+        for url in ("http://127.0.0.1:50325", "http://localhost:50325", "http://[::1]:50325", "https://ads.example.com"):
+            LocalApi(base_url=url)  # accepted
+        for url in ("http://192.0.2.10:50325", "http://ads.example.com"):
+            with self.assertRaisesRegex(ConfigError, "only allowed for this machine"):
+                LocalApi(base_url=url)
 
     def test_failure_code_raises_with_the_api_message(self):
         api, _ = make_api({"code": -1, "data": {}, "msg": "group not exist"})

@@ -51,7 +51,7 @@ remark. If several profiles match, you get a numbered list to pick from
 listed and the command fails instead.
 
 Names of groups, tags, and profiles are matched ignoring upper/lower
-case (`-t jericho` and `-t Jericho` are the same).
+case (`-t acme` and `-t Acme` are the same).
 
 Every command also accepts:
 
@@ -65,13 +65,13 @@ works the same as `adspower ...` without installing the command.
 ### Typical flow
 
 ```powershell
-adspower groups -n jer                         # which groups are there? -> Jericho
-adspower tags -n jer                           # which tag? -> jericho
-adspower search shop -g Jericho                # find the profile
-adspower open-profile shop -g Jericho          # open it (pick from a list if several match)
+adspower groups -n acm                         # which groups are there? -> Acme
+adspower tags -n acm                           # which tag? -> acme
+adspower search shop -g Acme                # find the profile
+adspower open-profile shop -g Acme          # open it (pick from a list if several match)
 
-adspower proxies -t Jericho --unused           # proxies ready to use
-adspower create "Shop 8" -g Jericho -t jericho --proxy auto
+adspower proxies -t Acme --unused           # proxies ready to use
+adspower create "Shop 8" -g Acme -t acme --proxy auto
 adspower set-proxy 1234 --proxy auto          # swap #1234's proxy for an unused one with its tag
 ```
 
@@ -89,27 +89,27 @@ from mrfactory.adspower import AdsPower, AmbiguousProfile
 ads = AdsPower()
 ads.open(wait=60)                                   # start AdsPower, wait for its API
 
-ads.groups(name="jer")                              # [Group(id=..., name='Jericho'), ...]
-ads.tags(name="jer")                                # [Tag(id=..., name='jericho'), ...]
-ads.profiles(group="Jericho", tag="jericho")
-ads.search_profiles("shop", group="Jericho")
+ads.groups(name="acm")                              # [Group(id=..., name='Acme'), ...]
+ads.tags(name="acm")                                # [Tag(id=..., name='acme'), ...]
+ads.profiles(group="Acme", tag="acme")
+ads.search_profiles("shop", group="Acme")
 
 try:
-    profile = ads.find_profile("shop", group="Jericho")
+    profile = ads.find_profile("shop", group="Acme")
 except AmbiguousProfile as e:
     profile = e.matches[0]                          # or ask the user
 browser = ads.open_profile(profile)                 # stays open after Python exits
 browser.puppeteer                                   # ws://... for automation tools later
 ads.close_profile(profile)
 
-proxy = ads.choose_proxy(tag="Jericho")             # first unused proxy tagged Jericho
-proxy = ads.choose_proxy(tag="Jericho", proxy_id="4322")   # or a specific one (must have the tag)
-ads.create_profile("Shop 8", group="Jericho", tag="jericho", proxy=proxy)
+proxy = ads.choose_proxy(tag="Acme")             # first unused proxy tagged Acme
+proxy = ads.choose_proxy(tag="Acme", proxy_id="4322")   # or a specific one (must have the tag)
+ads.create_profile("Shop 8", group="Acme", tag="acme", proxy=proxy)
 
 profile = ads.find_profile("1234")                 # exact serial: one quick request
 profile.proxy                                       # 'socks5://host:port' or '' (never the password)
 ads.current_proxy(profile)                          # its Proxy List entry, or None
-ads.set_proxy(profile, ads.choose_proxy(tag="jericho"))   # equip another tagged proxy
+ads.set_proxy(profile, ads.choose_proxy(tag="acme"))   # equip another tagged proxy
 ads.set_proxy(profile, None)                        # remove the proxy
 ```
 
@@ -136,7 +136,7 @@ installed where expected.
 - **Proxy tags are set in the AdsPower app** (Proxies > Proxy List). The
   Local API can read a proxy's tags but can't set them.
 - **Profile tags and proxy tags are separate lists** in AdsPower, even
-  when they share a name (`jericho` vs `Jericho`). `create --proxy auto`
+  when they share a name (`acme` vs `Acme`). `create --proxy auto`
   looks for proxies tagged like the profile's tag; use `--proxy-tag` if
   the proxy tag is different.
 - **A changed proxy applies the next time the browser opens.** If the

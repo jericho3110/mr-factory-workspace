@@ -15,15 +15,15 @@ from mrfactory.adspower.models import Group
 
 class TestMatching(unittest.TestCase):
     def test_contains_ignores_case_and_none_means_no_filter(self):
-        self.assertTrue(contains("Jericho", "JER"))
-        self.assertFalse(contains("Jericho", "x"))
+        self.assertTrue(contains("Acme", "ACM"))
+        self.assertFalse(contains("Acme", "x"))
         self.assertTrue(contains("anything", None))
 
     def test_find_by_name_or_id(self):
-        groups = [Group("1", "Jericho"), Group("2", "Jetty")]
-        self.assertEqual(find_by_name_or_id(groups, "jericho").id, "1")
+        groups = [Group("1", "Acme"), Group("2", "Jetty")]
+        self.assertEqual(find_by_name_or_id(groups, "acme").id, "1")
         self.assertEqual(find_by_name_or_id(groups, " 2 ").name, "Jetty")
-        self.assertIsNone(find_by_name_or_id(groups, "jer"))  # exact names only, not parts
+        self.assertIsNone(find_by_name_or_id(groups, "acm"))  # exact names only, not parts
 
     def test_names(self):
         self.assertEqual(names([Group("1", "a"), Group("2", "b")]), "a, b")

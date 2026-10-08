@@ -22,22 +22,22 @@ from . import commands
 EXAMPLES = """\
 examples:
   adspower open --wait 60               start AdsPower and wait until it's ready
-  adspower groups -n jer                groups whose name contains "jer"
+  adspower groups -n acm                groups whose name contains "acm"
   adspower tags                         every profile tag
-  adspower profiles -g Jericho          profiles in the "Jericho" group
-  adspower profiles -t jericho          profiles tagged "jericho"
-  adspower search shop -g Jericho       profiles in "Jericho" whose name/remark/serial/ID contains "shop"
+  adspower profiles -g Acme          profiles in the "Acme" group
+  adspower profiles -t acme          profiles tagged "acme"
+  adspower search shop -g Acme       profiles in "Acme" whose name/remark/serial/ID contains "shop"
   adspower open-profile 1234            open profile #1234 (stays open after the command ends)
-  adspower open-profile shop -g Jericho search, then open; asks which one if several match
+  adspower open-profile shop -g Acme search, then open; asks which one if several match
   adspower close-profile 1234           close its browser
-  adspower proxies -t Jericho --unused  proxies tagged "Jericho" that no profile uses yet
+  adspower proxies -t Acme --unused  proxies tagged "Acme" that no profile uses yet
   adspower set-proxy 1234 --proxy auto  give #1234 an unused proxy with the profile's tag (asks first)
   adspower set-proxy 1234 --proxy 4322  ...or that specific proxy (it must carry the tag)
   adspower set-proxy 1234 --no-proxy    remove its proxy
-  adspower create "Shop 8" -g Jericho -t jericho
-                                        new profile in group "Jericho", tagged "jericho", no proxy
-  adspower create "Shop 8" -g Jericho -t jericho --proxy auto
-                                        ...equipped with an unused proxy tagged "jericho"
+  adspower create "Shop 8" -g Acme -t acme
+                                        new profile in group "Acme", tagged "acme", no proxy
+  adspower create "Shop 8" -g Acme -t acme --proxy auto
+                                        ...equipped with an unused proxy tagged "acme"
   adspower groups --json                machine-readable output (any command)
 
 Group, tag, and profile names are matched ignoring upper/lower case.

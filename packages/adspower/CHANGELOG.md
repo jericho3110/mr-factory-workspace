@@ -23,6 +23,13 @@ version is `0.x`, any release may change how things work.
   abbreviations (`--api-k`) are rejected so they can't slip past.
 - `--api-url` / `ADSPOWER_API_URL` must be `http://` or `https://`;
   `urllib` would otherwise also open `file://` URLs.
+- Plain `http://` is accepted only for this machine (`127.0.0.1`,
+  `localhost`, `::1`). A remote API must use `https://`, so the API key
+  is never sent unencrypted over a network.
+- The API key header is no longer forwarded if the server answers with a
+  redirect (`add_unredirected_header`).
+- Examples and test data use neutral names (`Acme`) and reserved
+  documentation IPs (RFC 5737, `203.0.113.x`) instead of real ones.
 
 ### Fixed
 

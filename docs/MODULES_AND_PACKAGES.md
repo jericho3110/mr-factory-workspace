@@ -70,7 +70,7 @@ def contains(text, part): ...        # defines matching.contains
 
 # elsewhere
 from mrfactory.adspower import matching
-matching.contains("Jericho", "jer")  # True
+matching.contains("Acme", "acm")  # True
 ```
 
 What every module knows about itself. These double-underscore names

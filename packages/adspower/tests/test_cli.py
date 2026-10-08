@@ -46,9 +46,9 @@ class TestHelp(unittest.TestCase):
 
 class TestListing(unittest.TestCase):
     def test_groups_filtered_by_name(self):
-        code, out, _ = run("groups", "-n", "jer")
+        code, out, _ = run("groups", "-n", "acm")
         self.assertEqual(code, 0)
-        self.assertIn("Jericho", out)
+        self.assertIn("Acme", out)
         self.assertNotIn("Shopify", out)
         self.assertIn("1 group\n", out)
 
@@ -65,7 +65,7 @@ class TestListing(unittest.TestCase):
         self.assertNotIn("John Shop", out)
 
     def test_profiles_by_tag(self):
-        code, out, _ = run("profiles", "-t", "JERICHO")
+        code, out, _ = run("profiles", "-t", "ACME")
         self.assertEqual(code, 0)
         self.assertIn("John Shop", out)
         self.assertIn("1 profile\n", out)
@@ -78,7 +78,7 @@ class TestListing(unittest.TestCase):
         self.assertEqual(rows[0]["tags"], ["Sales"])
 
     def test_proxies_by_tag_hide_passwords(self):
-        code, out, _ = run("proxies", "-t", "jericho", "--unused", "--json")
+        code, out, _ = run("proxies", "-t", "acme", "--unused", "--json")
         rows = json.loads(out)
         self.assertEqual(code, 0)
         self.assertEqual([row["id"] for row in rows], ["p2"])
@@ -128,8 +128,8 @@ class TestSetProxy(unittest.TestCase):
         api = FakeApi()
         code, out, _ = run("set-proxy", "10", "--proxy", "auto", "--yes", api=api)
         self.assertEqual(code, 0)
-        self.assertIn("http://1.1.1.1:8000  ->  socks5://2.2.2.2:9000", out)  # shown before changing
-        self.assertEqual(api.updates, [{"profile_id": "k1a", "proxyid": "p2"}])  # p2: unused, tagged Jericho
+        self.assertIn("http://203.0.113.11:8000  ->  socks5://203.0.113.22:9000", out)  # shown before changing
+        self.assertEqual(api.updates, [{"profile_id": "k1a", "proxyid": "p2"}])  # p2: unused, tagged Acme
 
     def test_asks_first_in_a_terminal(self):
         api = FakeApi()
@@ -153,7 +153,7 @@ class TestSetProxy(unittest.TestCase):
         api = FakeApi()
         code, _, err = run("set-proxy", "10", "--proxy", "p3", "--yes", api=api)  # p3 is tagged Support
         self.assertEqual(code, 1)
-        self.assertIn("No proxy with ID 'p3' is tagged 'jericho'", err)
+        self.assertIn("No proxy with ID 'p3' is tagged 'acme'", err)
         self.assertEqual(api.updates, [])
 
     def test_profile_without_one_tag_needs_proxy_tag(self):
@@ -161,7 +161,7 @@ class TestSetProxy(unittest.TestCase):
         code, _, err = run("set-proxy", "2", "--proxy", "auto", "--yes", api=api)  # #2 has no tags
         self.assertEqual(code, 1)
         self.assertIn("--proxy-tag", err)
-        code, _, _ = run("set-proxy", "2", "--proxy", "auto", "--proxy-tag", "jericho", "--yes", api=api)
+        code, _, _ = run("set-proxy", "2", "--proxy", "auto", "--proxy-tag", "acme", "--yes", api=api)
         self.assertEqual(code, 0)
 
     def test_no_proxy_when_already_none_changes_nothing(self):
@@ -185,14 +185,14 @@ class TestSetProxy(unittest.TestCase):
 class TestCreate(unittest.TestCase):
     def test_create_without_proxy(self):
         api = FakeApi()
-        code, out, _ = run("create", "Shop 8", "-g", "Jericho", "-t", "jericho", api=api)
+        code, out, _ = run("create", "Shop 8", "-g", "Acme", "-t", "acme", api=api)
         self.assertEqual(code, 0)
         self.assertIn('Created #500 "Shop 8"', out)
         self.assertIn("Proxy: no proxy", out)
 
     def test_create_with_auto_proxy_uses_the_profile_tag_for_proxies(self):
         api = FakeApi()
-        code, _, _ = run("create", "Shop 8", "-g", "Jericho", "-t", "jericho", "--proxy", "auto", api=api)
+        code, _, _ = run("create", "Shop 8", "-g", "Acme", "-t", "acme", "--proxy", "auto", api=api)
         self.assertEqual(code, 0)
         self.assertEqual(api.created[0]["proxyid"], "p2")
 
@@ -202,7 +202,7 @@ class TestCreate(unittest.TestCase):
 
     def test_unknown_tag_creates_nothing(self):
         api = FakeApi()
-        code, _, err = run("create", "x", "-g", "Jericho", "-t", "Jerico", api=api)
+        code, _, err = run("create", "x", "-g", "Acme", "-t", "Acmee", api=api)
         self.assertEqual(code, 1)
         self.assertIn("No profile tag", err)
         self.assertEqual(api.created, [])

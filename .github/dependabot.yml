@@ -6,7 +6,3 @@ updates:
     directory: /
     schedule:
       interval: monthly
-  - package-ecosystem: pip              # opencv-python, numpy lower bounds
-    directory: /packages/mouse-ext
-    schedule:
-      interval: monthly

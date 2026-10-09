@@ -1,5 +1,10 @@
 # Modules, packages, and versions
 
+> **2026-10-09:** `mouse-ext` (`mrfactory.mouse_ext`) has moved into its own library,
+> [natural-mouse](https://github.com/jericho3110/natural-mouse) (`natural_mouse.extensions`, `natural_mouse.plugins`). The
+> lessons below still apply; where they name `packages/mouse-ext/...`, the code now
+> lives in that repo (`src/natural_mouse/`, `tests/ext_fakes.py`, `docs/EXTENSIONS_AND_PLUGINS.md`).
+
 Everything about how Python code is split into files, found by
 `import`, bundled into something `pip` can install, and versioned.
 Every idea is shown on this workspace, with real output from it, so you

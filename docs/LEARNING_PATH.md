@@ -1,5 +1,10 @@
 # Learning path
 
+> **2026-10-09:** `mouse-ext` (`mrfactory.mouse_ext`) has moved into its own library,
+> [natural-mouse](https://github.com/jericho3110/natural-mouse) (`natural_mouse.extensions`, `natural_mouse.plugins`). The
+> lessons below still apply; where they name `packages/mouse-ext/...`, the code now
+> lives in that repo (`src/natural_mouse/`, `tests/ext_fakes.py`, `docs/EXTENSIONS_AND_PLUGINS.md`).
+
 A guided route through this workspace for learning the skills it uses,
 so you can **rebuild the same kind of project yourself** and then improve
 on it. Each step says what to read, what to look for, and a small
@@ -17,7 +22,7 @@ The other docs are references (look things up); this one is a course
 | [LIBRARIES_AND_BUILTINS.md](LIBRARIES_AND_BUILTINS.md) | reference: every stdlib module, built-in, dunder, decorator, and external library used, and why |
 | [MODULES_AND_PACKAGES.md](MODULES_AND_PACKAGES.md) | modules vs packages, how `import` works, distributions, versions, dependencies |
 | [adspower ARCHITECTURE](../packages/adspower/docs/ARCHITECTURE.md) | a complete small application, layer by layer |
-| [mouse-ext ARCHITECTURE](../packages/mouse-ext/docs/ARCHITECTURE.md) | extending a library you don't own: Decorator, plugins/hooks |
+| [mouse-ext ARCHITECTURE](https://github.com/jericho3110/natural-mouse/blob/main/docs/EXTENSIONS_AND_PLUGINS.md) | extending a library you don't own: Decorator, plugins/hooks |
 | [adspower CHANGELOG](../packages/adspower/CHANGELOG.md) | how the design evolved, version by version |
 
 > **Tip:** read code with the doc open next to it. Every concept below
@@ -229,7 +234,7 @@ What would go wrong without it?
 
 ## Stage 7: Extending code you don't own (mouse-ext)
 
-Read [mouse-ext ARCHITECTURE](../packages/mouse-ext/docs/ARCHITECTURE.md).
+Read [mouse-ext ARCHITECTURE](https://github.com/jericho3110/natural-mouse/blob/main/docs/EXTENSIONS_AND_PLUGINS.md).
 
 **Concepts:** Open/Closed principle · Decorator (wrappers with the same
 interface) · Observer/hooks (plugins) · Liskov substitution · entry-point

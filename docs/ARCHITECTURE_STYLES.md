@@ -1,5 +1,10 @@
 # Architecture styles: what this codebase uses, and what it doesn't
 
+> **2026-10-09:** `mouse-ext` (`mrfactory.mouse_ext`) has moved into its own library,
+> [natural-mouse](https://github.com/jericho3110/natural-mouse) (`natural_mouse.extensions`, `natural_mouse.plugins`). The
+> lessons below still apply; where they name `packages/mouse-ext/...`, the code now
+> lives in that repo (`src/natural_mouse/`, `tests/ext_fakes.py`, `docs/EXTENSIONS_AND_PLUGINS.md`).
+
 "Which architecture is this?" has a different answer at each level of
 the codebase, and two separate questions hide inside it:
 
@@ -274,7 +279,7 @@ In mouse-ext:
 - **Discovery:** other installed packages can add plugins through
   **entry points**, so the core doesn't even need to know they exist.
 
-Details: [mouse-ext ARCHITECTURE](../packages/mouse-ext/docs/ARCHITECTURE.md).
+Details: [mouse-ext ARCHITECTURE](https://github.com/jericho3110/natural-mouse/blob/main/docs/EXTENSIONS_AND_PLUGINS.md).
 Note that the strategy interfaces of `natural_mouse` (`ScreenLocator`,
 `PathGenerator`, `InputExecutor`) are themselves **ports** in the
 hexagonal sense: the core defines them, and implementations are plugged

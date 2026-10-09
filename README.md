@@ -8,14 +8,18 @@ lives in its own folder under `packages/`, and installs into the shared
 
 | Package | Import | What it does |
 | --- | --- | --- |
-| [`packages/mouse-ext`](packages/mouse-ext/) | `mrfactory.mouse_ext` | Plugins and extensions for [natural_mouse](https://github.com/jericho3110/natural-mouse), the human-like mouse mover |
 | [`packages/adspower`](packages/adspower/) | `mrfactory.adspower` | Opens AdsPower; finds groups, tags, profiles, and proxies; opens, creates, and re-proxies profiles (`adspower --help`) |
 | [`packages/gitship`](packages/gitship/) | `mrfactory.gitship` | Checks, scans, commits, pushes, publishes (private by default) and releases a git repo safely (`gitship --help`) |
 
-> **Note:** `mouse-ext` builds on `natural_mouse`, which lives in a
-> separate, **private** repository, so `mouse-ext` can be read and
-> learned from here but not installed without access to that library.
-> `adspower` has no such dependency and works on its own.
+### Linked library: natural-mouse
+
+The human-like mouse library (curves, easing, jitter, Fitts's law,
+extensions and plugins) is developed in its **own repository**,
+[natural-mouse](https://github.com/jericho3110/natural-mouse), in the `Natural/` folder next to this one. It
+used to be split: `natural_mouse` there and `packages/mouse-ext` here;
+since 2026-10-09 it's all one library (`from natural_mouse import ...`).
+The workspace links to it rather than keeping a copy: install it with
+`pip install -e ../Natural`.
 
 **New here and want to learn from it?** Start with
 [docs/LEARNING_PATH.md](docs/LEARNING_PATH.md).
@@ -31,9 +35,8 @@ venv\Scripts\activate
 
 pip install -e packages/adspower
 
-# mouse-ext also needs natural_mouse, from the Natural project next to this folder
+# optional: the linked mouse library, developed in ../Natural (its own repo)
 pip install -e ../Natural
-pip install -e packages/mouse-ext
 
 pip install ruff        # the linter (development only)
 ```
@@ -86,7 +89,6 @@ docs/
   CONVENTIONS.md       layout, naming, dependency, and commit rules
 scripts/test_all.py    runs each package's tests in its own process
 packages/
-  mouse-ext/           mrfactory-mouse-ext
   adspower/            mrfactory-adspower
 ```
 

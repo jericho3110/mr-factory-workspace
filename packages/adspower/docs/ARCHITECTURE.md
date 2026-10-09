@@ -561,7 +561,7 @@ are never touched.
 | Technique | Where | What to remember |
 | --- | --- | --- |
 | Default arguments are evaluated **once** | `prompts.choose(ask=None)` | `def f(ask=input)` captures `input` at definition time; patching it later has no effect. Same root cause as the `def f(items=[])` shared-list bug. Default to `None`, resolve inside |
-| Immutable defaults are fine | mouse-ext `tests/fakes.py` `SCREEN_CENTER` | Ruff's B008 warns about calls in defaults; a frozen dataclass can't be mutated, so a named module constant is safe and clearer |
+| Immutable defaults are fine | natural-mouse `tests/ext_fakes.py` `SCREEN_CENTER` (formerly mouse-ext) | Ruff's B008 warns about calls in defaults; a frozen dataclass can't be mutated, so a named module constant is safe and clearer |
 | `KeyboardInterrupt` is a `BaseException` | `cli/app.py` | `except Exception` doesn't catch Ctrl+C |
 | `zip(..., strict=True)` | `cli/output.py` | Raises if the lengths differ, instead of silently dropping data (Python 3.10+) |
 | `raise X from e` | `api.py`, `client.py` | Keeps the original error as `__cause__` |

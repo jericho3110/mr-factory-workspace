@@ -1,5 +1,5 @@
 """Makes `mrfactory.adspower` importable from the tests without
-installing it (same approach as packages/mouse-ext/tests)."""
+installing it."""
 
 import sys
 from pathlib import Path

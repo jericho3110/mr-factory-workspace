@@ -20,10 +20,8 @@ Only the latest version on `main` is maintained.
   - Only `http://` and `https://` API URLs are accepted. If you point
     `--api-url` at another machine, use `https://`; over plain `http://`
     the key travels unencrypted.
-- **`mouse-ext`** can load plugins named in a string
-  (`PluginManager.load_path`) or advertised by installed packages
-  (`load_entry_points`). Both **run that code**, so only load plugins
-  from sources you trust, as with any Python package you install.
+- The plugin loading that used to live in `mouse-ext` is now in
+  [natural-mouse](https://github.com/jericho3110/natural-mouse), with its own SECURITY.md.
 
 ## How this repository is protected
 

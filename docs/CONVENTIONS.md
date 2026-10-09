@@ -1,5 +1,10 @@
 # Workspace conventions
 
+> **2026-10-09:** `mouse-ext` (`mrfactory.mouse_ext`) has moved into its own library,
+> [natural-mouse](https://github.com/jericho3110/natural-mouse) (`natural_mouse.extensions`, `natural_mouse.plugins`). The
+> lessons below still apply; where they name `packages/mouse-ext/...`, the code now
+> lives in that repo (`src/natural_mouse/`, `tests/ext_fakes.py`, `docs/EXTENSIONS_AND_PLUGINS.md`).
+
 How this workspace is organized and how everything in it is named.
 Follow these when adding or changing a package, so the workspace stays
 predictable as it grows. The reasoning behind each rule is in

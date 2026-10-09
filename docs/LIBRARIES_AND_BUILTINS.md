@@ -1,5 +1,10 @@
 # Libraries, built-ins, and dunder methods used
 
+> **2026-10-09:** `mouse-ext` (`mrfactory.mouse_ext`) has moved into its own library,
+> [natural-mouse](https://github.com/jericho3110/natural-mouse) (`natural_mouse.extensions`, `natural_mouse.plugins`). The
+> lessons below still apply; where they name `packages/mouse-ext/...`, the code now
+> lives in that repo (`src/natural_mouse/`, `tests/ext_fakes.py`, `docs/EXTENSIONS_AND_PLUGINS.md`).
+
 A reference to **everything this workspace's code uses from Python and
 from other libraries**: each standard-library module, built-in function,
 dunder method, decorator, language feature, and external library, with

@@ -1,5 +1,10 @@
 # Workspace architecture
 
+> **2026-10-09:** `mouse-ext` (`mrfactory.mouse_ext`) has moved into its own library,
+> [natural-mouse](https://github.com/jericho3110/natural-mouse) (`natural_mouse.extensions`, `natural_mouse.plugins`). The
+> lessons below still apply; where they name `packages/mouse-ext/...`, the code now
+> lives in that repo (`src/natural_mouse/`, `tests/ext_fakes.py`, `docs/EXTENSIONS_AND_PLUGINS.md`).
+
 This file explains *why* the workspace is built the way it is: the
 software-engineering ideas behind the layout, the packaging files, the
 commands, the code style, and the tests. [CONVENTIONS.md](CONVENTIONS.md)
@@ -7,7 +12,7 @@ lists the rules. This file gives the reasons for them.
 
 The design patterns *inside* `mouse-ext` (Decorator, Observer/hooks,
 Liskov, Open/Closed, entry-point discovery) are explained in
-[packages/mouse-ext/docs/ARCHITECTURE.md](../packages/mouse-ext/docs/ARCHITECTURE.md)
+[packages/mouse-ext/docs/ARCHITECTURE.md](https://github.com/jericho3110/natural-mouse/blob/main/docs/EXTENSIONS_AND_PLUGINS.md)
 and are only referenced here.
 
 Contents:
@@ -120,7 +125,7 @@ would never arrive, and there'd be two versions of the truth.
 ### Open/Closed
 
 `mouse-ext` adds features to `natural_mouse` without editing a line of
-it. See the [mouse-ext architecture doc](../packages/mouse-ext/docs/ARCHITECTURE.md#openclosed-principle-the-big-one-here).
+it. See the [mouse-ext architecture doc](https://github.com/jericho3110/natural-mouse/blob/main/docs/EXTENSIONS_AND_PLUGINS.md#openclosed-principle-the-big-one-here).
 
 ### Choose the simplest mechanism that works (KISS)
 

@@ -178,7 +178,7 @@ dependency: `pip install -e "packages/adspower[browser]"` (or
 It looks for `AdsPower Global\AdsPower Global.exe` under Program Files,
 Program Files (x86), and `%LOCALAPPDATA%\Programs` (per-user installs),
 then launches it directly. That's more reliable than finding and clicking
-its icon on screen, so this package doesn't use `mrfactory.mouse_ext`.
+its icon on screen, so this package doesn't use the natural-mouse library.
 
 ## Layout
 

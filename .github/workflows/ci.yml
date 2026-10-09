@@ -35,4 +35,4 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
-      - run: python scripts/test_all.py adspower gitship
+      - run: python scripts/test_all.py adspower gitship devtools

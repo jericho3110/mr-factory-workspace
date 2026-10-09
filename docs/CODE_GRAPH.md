@@ -149,7 +149,7 @@ The first merged graph (two workspaces, about 5,000 nodes) showed:
 ## References
 
 **Official**
-- graphify: [README](https://github.com/Graphify-Labs/graphify), [SECURITY.md](https://github.com/Graphify-Labs/graphify/blob/main/SECURITY.md), [how it works](https://github.com/Graphify-Labs/graphify/blob/main/docs/how-it-works.md), PyPI [`graphifyy`](https://pypi.org/project/graphifyy/)
+- graphify: [README](https://github.com/Graphify-Labs/graphify), [SECURITY.md](https://github.com/Graphify-Labs/graphify/blob/HEAD/SECURITY.md), [how it works](https://github.com/Graphify-Labs/graphify/blob/HEAD/docs/how-it-works.md), PyPI [`graphifyy`](https://pypi.org/project/graphifyy/)
 - [tree-sitter](https://tree-sitter.github.io/tree-sitter/): the parser graphify uses for code
 - [uv tools](https://docs.astral.sh/uv/concepts/tools/): how `uv tool install` isolates a CLI
 - NetworkX: [community detection (Louvain)](https://networkx.org/documentation/stable/reference/algorithms/generated/networkx.algorithms.community.louvain.louvain_communities.html), [betweenness centrality](https://networkx.org/documentation/stable/reference/algorithms/generated/networkx.algorithms.centrality.betweenness_centrality.html)

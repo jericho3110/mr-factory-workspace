@@ -9,6 +9,7 @@ lives in its own folder under `packages/`, and installs into the shared
 | Package | Import | What it does |
 | --- | --- | --- |
 | [`packages/adspower`](packages/adspower/) | `mrfactory.adspower` | Opens AdsPower; finds groups, tags, profiles, and proxies; opens, creates, and re-proxies profiles (`adspower --help`) |
+| [`packages/devtools`](packages/devtools/) | `mrfactory.devtools` | One security scanner and one Markdown link checker for every project (`devtools --help`) |
 | [`packages/gitship`](packages/gitship/) | `mrfactory.gitship` | Checks, scans, commits, pushes, publishes (private by default) and releases a git repo safely (`gitship --help`) |
 
 ### Linked library: natural-mouse

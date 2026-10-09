@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mrfactory-devtools"
+version = "0.1.0"
+description = "One security scanner and one Markdown link checker for every project, instead of a copy in each."
+requires-python = ">=3.10"
+# Needs mrfactory-gitship (its file scanner is reused, not copied). It is not
+# listed here because it isn't on PyPI: pip would look for it there and could
+# install a stranger's package of that name (dependency confusion, see
+# docs/CONVENTIONS.md section 4). Install both from the workspace instead.
+dependencies = []
+
+[project.scripts]
+devtools = "mrfactory.devtools.cli:main"
+
+# `mrfactory` is a namespace package shared by every package in the
+# workspace. See docs/CONVENTIONS.md at the workspace root.
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["mrfactory.devtools*"]
+namespaces = true

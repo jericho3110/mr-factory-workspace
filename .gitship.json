@@ -1,4 +1,4 @@
 {
-  "checks": [["ruff", "check", "."], ["python", "scripts/test_all.py", "adspower", "gitship"]],
+  "checks": [["ruff", "check", "."], ["python", "scripts/test_all.py", "adspower", "gitship", "devtools"], ["devtools", "scan"], ["devtools", "links", "--offline"]],
   "trailer": "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 }

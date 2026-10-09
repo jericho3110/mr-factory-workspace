@@ -66,6 +66,7 @@ python scripts/test_all.py adspower     # ...or just one
 | [docs/LIBRARIES_AND_BUILTINS.md](docs/LIBRARIES_AND_BUILTINS.md) | every standard-library module, built-in, dunder method, decorator, and external library used: where, and why |
 | [docs/MODULES_AND_PACKAGES.md](docs/MODULES_AND_PACKAGES.md) | modules vs packages, how `import` works, distributions, versions, dependencies |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | the *why* of the workspace: principles, `pyproject.toml`, `src/` layout, every command, testing, linting |
+| [docs/CODE_GRAPH.md](docs/CODE_GRAPH.md) | code graphs with graphify: build (free, local), merge workspaces, query, read results honestly, privacy |
 | [docs/GITHUB_WORKFLOW.md](docs/GITHUB_WORKFLOW.md) | commit, push, publish a repo, make a release: every step, why, and the commands (automated by `gitship`) |
 | [docs/CONVENTIONS.md](docs/CONVENTIONS.md) | the rules: layout, naming, namespace package, dependencies, commits |
 | `packages/<name>/README.md` | how to use each package |

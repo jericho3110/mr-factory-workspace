@@ -15,3 +15,6 @@ dist/
 misses/
 *.paths.json
 templates/*
+
+# ---- code graph (graphify): local only, holds absolute paths ----
+graphify-out/

@@ -451,7 +451,7 @@ Further reading: Real Python on [`pathlib`](https://realpython.com/python-pathli
 - PyPI pages (check the exact name before installing): [opencv-python](https://pypi.org/project/opencv-python/) · [numpy](https://pypi.org/project/numpy/)
 - Fitts's law: <https://en.wikipedia.org/wiki/Fitts%27s_law>
 - Tools: [setuptools](https://setuptools.pypa.io/en/latest/userguide/development_mode.html) · [pip](https://pip.pypa.io/en/stable/cli/pip_install/) · [Ruff](https://docs.astral.sh/ruff/) · [`gh repo create`](https://cli.github.com/manual/gh_repo_create)
-- `natural-mouse` (the library mouse-ext extends) is a **private** repo: <https://github.com/jericho3110/natural-mouse>. Its links work only when signed in with access.
+- `natural-mouse` (the library mouse-ext extends) is a public repo (since October 2026): <https://github.com/jericho3110/natural-mouse>.
 
 ### §8 Adding a dependency
 

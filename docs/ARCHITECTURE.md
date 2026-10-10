@@ -730,8 +730,9 @@ Every design has costs. These ones are known:
   every package (§9). `ruff format` and mypy/Pyright would be the next steps.
 - **CI runs adspower only.** GitHub Actions ([ci.yml](../.github/workflows/ci.yml))
   runs `ruff check .` and adspower's tests on Windows and Linux, on the
-  oldest (3.10) and newest Python. mouse-ext's tests can't run there:
-  they need `natural_mouse`, which is in a private repo.
+  oldest (3.10) and newest Python. mouse-ext's tests don't run there yet:
+  they need `natural_mouse`, which lives in its own repo. That repo is now
+  public, so CI could install it first; that isn't wired up yet.
 - **`sys.path` edits in `tests/__init__.py`.** Convenient (no install
   needed), but slightly magical. The cleaner alternative is "always
   `pip install -e` first, then test".
